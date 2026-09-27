@@ -7,10 +7,10 @@
 // Security Rules (see firestore.rules), not by hiding this file.
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyD28PD7Jj9mqFvTK6qrzgewARyB65hDdGc",
+  authDomain: "daily-greetings-a9d47.firebaseapp.com",
+  projectId: "daily-greetings-a9d47",
+  storageBucket: "daily-greetings-a9d47.firebasestorage.app",
+  messagingSenderId: "955190409262",
+  appId: "1:955190409262:web:8b558dda99f1ee1fc387bf"
 };
