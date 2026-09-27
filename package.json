@@ -1,0 +1,13 @@
+{
+  "name": "daily-greetings-sync",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CSV-to-JSON sync script for the Daily Greetings app, checked against Firebase for already-sent contacts.",
+  "scripts": {
+    "sync": "node scripts/sync-contacts.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "firebase-admin": "^12.5.0"
+  }
+}

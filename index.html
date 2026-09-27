@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Greetings</title>
+<meta name="theme-color" content="#128C7E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🌿 Daily Greetings</h1>
+    <p id="dateLabel" class="subtle"></p>
+  </header>
+
+  <section id="progress" class="progress"></section>
+
+  <main id="list" class="list">
+    <p class="loading">Loading today's contacts…</p>
+  </main>
+
+  <footer>
+    <button id="prevDay" class="ghost">← Yesterday</button>
+    <button id="resetToday" class="ghost">Today</button>
+    <button id="nextDay" class="ghost">Tomorrow →</button>
+  </footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

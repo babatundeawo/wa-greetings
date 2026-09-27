@@ -1,0 +1,35 @@
+name: Sync contacts from CSV
+
+on:
+  push:
+    paths:
+      - "data/contacts.csv"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Sync contacts against Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/sync-contacts.js
+
+      - name: Commit updated JSON files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Sync contacts.json / pending.json / sent.json from updated CSV"
+          file_pattern: "contacts.json pending.json sent.json"

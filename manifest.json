@@ -1,0 +1,13 @@
+{
+  "name": "Daily Greetings",
+  "short_name": "Greetings",
+  "description": "Daily WhatsApp greeting messages for 10 contacts a day",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F6F5",
+  "theme_color": "#128C7E",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
