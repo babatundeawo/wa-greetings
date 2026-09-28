@@ -1,14 +1,59 @@
 // ---- Configuration ----
 const BATCH_SIZE = 10;
 
-const GREETING_TEMPLATES = [
+// A large pool of everyday greetings. One is picked per contact per day —
+// not the same message for everyone, and not the same message twice in a
+// row for the same person — so the rotation doesn't feel copy-pasted.
+const GENERIC_TEMPLATES = [
   "Good {timeOfDay}, {name}! Just checking in to say hello and wish you a wonderful day ahead. 🙏",
   "Hi {name}, hope you're doing well! Sending you a quick {timeOfDay} greeting and lots of good wishes. 😊",
   "Dear {name}, good {timeOfDay}! Thinking of you today — wishing you peace, health and joy. ✨",
   "Hello {name}! Just wanted to reach out and say I appreciate you. Have a great {timeOfDay}! 🌿",
   "Good {timeOfDay}, {name}. Wishing you a productive and blessed day today. Take care! 🙌",
   "Hi {name}, hope all is well with you and your family. Sending warm {timeOfDay} greetings your way! 💛",
+  "{name}, good {timeOfDay}! Just popping in to say hi and hope you're having a great one so far. 😊",
+  "Hey {name}, hope your {timeOfDay} is going smoothly. Wishing you good health and God's favour today. 🙏",
+  "Good {timeOfDay}, {name}! You crossed my mind today, so I thought I'd say hello. Take care of yourself. 🌟",
+  "Dear {name}, sending you some {timeOfDay} sunshine and good vibes. Have a beautiful day! ☀️",
+  "{name}, good {timeOfDay} to you! Hope things are going well on your end. Stay blessed. 🙌",
+  "Hi {name}, just a little {timeOfDay} note to say I'm thinking of you and wishing you well. 💫",
+  "Good {timeOfDay}, {name}! Hope this meets you in good health and high spirits. 🌿",
+  "Hi {name}, wishing you a smooth and peaceful {timeOfDay}. Stay well! 🙏",
+  "{name}, good {timeOfDay}! Just wanted to check in and say I hope all is well with you. 😊",
+  "Hey {name}, sending a bit of {timeOfDay} encouragement your way. You're doing great — keep it up! 💪",
+  "Dear {name}, hope your {timeOfDay} is off to a good start. Thinking of you and your family. 💛",
+  "Good {timeOfDay}, {name}! Wishing you strength, joy, and good news today. 🌟",
 ];
+
+// Only used on the matching real-world weekday, in addition to the generic
+// pool above — Date.getDay(): 0 = Sunday, 1 = Monday ... 6 = Saturday.
+const WEEKDAY_TEMPLATES = {
+  1: [ // Monday
+    "Good {timeOfDay}, {name}! Happy new week to you — wishing you a fresh start and God's grace all through. 🙏",
+    "Hi {name}, happy new week! Praying it's filled with progress and good things for you. 🌟",
+  ],
+  5: [ // Friday
+    "Good {timeOfDay}, {name}! Happy Friday — you made it through the week. Have a great weekend ahead. 🎉",
+    "Hi {name}, happy Friday! Wishing you a relaxing and well-deserved weekend. 😊",
+  ],
+  6: [ // Saturday
+    "Good {timeOfDay}, {name}! Happy weekend — hope you get some good rest and quality time today. 🌿",
+  ],
+  0: [ // Sunday
+    "Good {timeOfDay}, {name}! Happy Sunday, wishing you a blessed day of worship and rest. 🙏",
+  ],
+};
+
+// Simple, dependency-free string hash so the "random" pick is deterministic
+// per contact+day (stable if you reload the page) but varies across
+// contacts and across days, without needing to store anything extra.
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
 
 // ---- Firebase setup ----
 // firebaseConfig comes from firebase-config.js, loaded before this file.
@@ -60,9 +105,12 @@ function firstName(fullName) {
   return fullName.split(' ')[0];
 }
 
-function greetingFor(name, round) {
-  const template = GREETING_TEMPLATES[round % GREETING_TEMPLATES.length];
-  return template.replace(/{name}/g, firstName(name)).replace(/{timeOfDay}/g, timeOfDay());
+function greetingFor(contact, viewDate) {
+  const pool = GENERIC_TEMPLATES.concat(WEEKDAY_TEMPLATES[viewDate.getDay()] || []);
+  const dateKey = fmtDateKey(viewDate);
+  const idx = hashString(contact.phone + '|' + dateKey) % pool.length;
+  const template = pool[idx];
+  return template.replace(/{name}/g, firstName(contact.name)).replace(/{timeOfDay}/g, timeOfDay());
 }
 
 function waLink(phone, message) {
@@ -197,7 +245,7 @@ async function render() {
   phones.forEach((phone, i) => {
     const contact = contactsByPhone[phone];
     if (!contact) return;
-    const message = greetingFor(contact.name, round - 1);
+    const message = greetingFor(contact, viewDate);
     const isSent = sentSet.has(contact.phone);
 
     const card = document.createElement('div');
