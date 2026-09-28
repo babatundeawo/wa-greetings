@@ -1,6 +1,6 @@
 # Daily Greetings
 
-A small installable web app (PWA) that gives you 10 people to send a WhatsApp
+A small installable web app (PWA) that gives you 20 people to send a WhatsApp
 greeting to each day, cycling through your contact list so everyone eventually
 gets a turn. Who's already been greeted is tracked in Firebase (Firestore),
 so it auto-syncs — no manual bookkeeping, and it survives you re-uploading an
@@ -9,7 +9,7 @@ updated contact list.
 ## How it works day to day
 
 - `contacts.json` holds your contacts (name + phone number).
-- Each day the app shows the next 10 contacts who **haven't been greeted yet
+- Each day the app shows the next 20 contacts who **haven't been greeted yet
   this round**, tracked by phone number in Firestore. Mark someone sent and
   they won't reappear until everyone's had a turn, at which point a new
   round starts automatically.
@@ -20,6 +20,12 @@ updated contact list.
 - "Reset rotation" (under the progress line) clears everyone's sent status.
 - "← Yesterday" / "Tomorrow →" only *preview* another day's batch based on
   current sent status — they don't lock anything in.
+- If you only get through some of the 20 (say you send to and mark 10),
+  the rest simply carry over — they'll be at the front of tomorrow's batch
+  again, topped up with fresh people to reach 20. Nothing is skipped. The
+  flip side: the app only knows someone's "sent" because you tapped
+  **Mark sent** — there's no way for it to detect an actual WhatsApp send,
+  so if you send but forget to mark it, that person will show up again.
 
 ## One-time setup
 
@@ -122,9 +128,12 @@ node scripts/sync-contacts.js
 
 ## Customizing greetings
 
-Open `app.js` and edit the `GREETING_TEMPLATES` array near the top.
-`{name}` becomes the contact's first name, `{timeOfDay}` becomes "morning",
-"afternoon", or "evening" based on when you open the app.
+Open `app.js` and edit the `GENERIC_TEMPLATES` array (and the day-specific
+ones in `WEEKDAY_TEMPLATES`) near the top. `{name}` becomes the contact's
+first name, `{timeOfDay}` becomes "morning", "afternoon", or "evening"
+based on when you open the app. Each contact gets a message picked based on
+their phone number and the date, so it varies from person to person and
+day to day without needing you to track anything.
 
 ## A note on the open Firestore rules
 

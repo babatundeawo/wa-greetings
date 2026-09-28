@@ -1,5 +1,5 @@
 // ---- Configuration ----
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 20;
 
 // A large pool of everyday greetings. One is picked per contact per day —
 // not the same message for everyone, and not the same message twice in a
