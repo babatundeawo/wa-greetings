@@ -128,10 +128,23 @@ talk to Firestore on your behalf when syncing a new CSV:
 
 ### 5. Install it on your phone
 
-Open the link above in your phone's browser, then use
-**"Add to Home Screen"** (iOS Safari) or **"Install app"** (Android Chrome).
-It'll open like a normal app, showing the sign-in screen first. Most
-phone browsers will offer to remember the password for you after the
+Open the link above in your phone's browser.
+
+**On Android (Chrome):** you should see an **"Install app"** option appear
+either in the 3-dot menu, or as a small install icon in the address bar —
+tap it, confirm, and it's added to your home screen and app drawer like any
+other app, with its own icon. If you don't see the prompt right away, visit
+the site once, then check the menu again — Chrome sometimes waits for a
+first visit before offering it. (Other Android browsers like Samsung
+Internet or Edge have an equivalent "Add page to" / "Install app" option in
+their menu.)
+
+**On iPhone (Safari):** tap the Share icon, scroll down, and tap
+**"Add to Home Screen"** — iOS doesn't show an automatic install prompt the
+way Android does.
+
+Either way, it'll open like a normal app, showing the sign-in screen first.
+Most phone browsers will offer to remember the password for you after the
 first sign-in.
 
 ## Login / access control

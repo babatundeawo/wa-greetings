@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-greetings-v1';
+const CACHE_NAME = 'daily-greetings-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,9 @@ const ASSETS = [
   './contacts.json',
   './manifest.json',
   './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-180.png',
 ];
 
 self.addEventListener('install', (event) => {
