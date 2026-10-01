@@ -32,4 +32,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Sync contacts.json / pending.json / sent.json from updated CSV"
-          file_pattern: "contacts.json pending.json sent.json"
+          file_pattern: "contacts.json pending.json sent.json ignored.json"

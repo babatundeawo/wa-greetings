@@ -27,6 +27,7 @@ const CSV_PATH = path.join(ROOT, 'data', 'contacts.csv');
 const CONTACTS_JSON = path.join(ROOT, 'contacts.json');
 const PENDING_JSON = path.join(ROOT, 'pending.json');
 const SENT_JSON = path.join(ROOT, 'sent.json');
+const IGNORED_JSON = path.join(ROOT, 'ignored.json');
 
 const PHONE_COLS = Array.from({ length: 10 }, (_, i) => `Phone ${i + 1} - Value`);
 
@@ -95,6 +96,7 @@ async function main() {
     console.warn('FIREBASE_SERVICE_ACCOUNT not set — skipping Firebase sync, writing pending/sent as best-effort (everyone treated as pending).');
     fs.writeFileSync(PENDING_JSON, JSON.stringify(contacts, null, 2));
     fs.writeFileSync(SENT_JSON, JSON.stringify([], null, 2));
+    fs.writeFileSync(IGNORED_JSON, JSON.stringify([], null, 2));
     return;
   }
 
@@ -104,15 +106,19 @@ async function main() {
 
   const stateSnap = await db.collection('rotation').doc('state').get();
   const sentPhones = new Set(stateSnap.exists ? (stateSnap.data().sentPhones || []) : []);
+  const ignoredPhones = new Set(stateSnap.exists ? (stateSnap.data().ignoredPhones || []) : []);
 
-  const pending = contacts.filter((c) => !sentPhones.has(c.phone));
-  const sent = contacts.filter((c) => sentPhones.has(c.phone));
+  const active = contacts.filter((c) => !ignoredPhones.has(c.phone));
+  const pending = active.filter((c) => !sentPhones.has(c.phone));
+  const sent = active.filter((c) => sentPhones.has(c.phone));
+  const ignored = contacts.filter((c) => ignoredPhones.has(c.phone));
 
   fs.writeFileSync(PENDING_JSON, JSON.stringify(pending, null, 2));
   fs.writeFileSync(SENT_JSON, JSON.stringify(sent, null, 2));
+  fs.writeFileSync(IGNORED_JSON, JSON.stringify(ignored, null, 2));
 
-  console.log(`Firestore says ${sentPhones.size} phone numbers already greeted this round.`);
-  console.log(`pending.json: ${pending.length} contacts. sent.json: ${sent.length} contacts.`);
+  console.log(`Firestore says ${sentPhones.size} phone numbers already greeted this round, ${ignoredPhones.size} ignored.`);
+  console.log(`pending.json: ${pending.length} contacts. sent.json: ${sent.length} contacts. ignored.json: ${ignored.length} contacts.`);
 }
 
 main().catch((err) => {

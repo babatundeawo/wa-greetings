@@ -2,11 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Open access, but scoped to ONLY the rotation state/batches —
-    // nothing else in this database is reachable, even if you add more
-    // collections later without updating these rules.
+    // Only a signed-in Firebase user may read or write the rotation data.
+    // There is no public sign-up for this app — the single allowed account
+    // is created manually in Firebase Console → Authentication → Users.
     match /rotation/{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
 
     match /{document=**} {

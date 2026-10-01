@@ -11,24 +11,42 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>🌿 Daily Greetings</h1>
-    <p id="dateLabel" class="subtle"></p>
-  </header>
 
-  <section id="progress" class="progress"></section>
+  <section id="login" class="login-screen">
+    <div class="login-card">
+      <h1>🌿 Daily Greetings</h1>
+      <p class="subtle">Sign in to continue</p>
+      <form id="loginForm">
+        <input id="loginEmail" type="email" placeholder="Email" autocomplete="username" required>
+        <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="send-btn">Sign in</button>
+      </form>
+      <p id="loginError" class="login-error"></p>
+    </div>
+  </section>
 
-  <main id="list" class="list">
-    <p class="loading">Loading today's contacts…</p>
-  </main>
+  <div id="app" style="display:none;">
+    <header>
+      <h1>🌿 Daily Greetings</h1>
+      <p id="dateLabel" class="subtle"></p>
+      <button id="signOutBtn" class="link-btn light">Sign out</button>
+    </header>
 
-  <footer>
-    <button id="prevDay" class="ghost">← Yesterday</button>
-    <button id="resetToday" class="ghost">Today</button>
-    <button id="nextDay" class="ghost">Tomorrow →</button>
-  </footer>
+    <section id="progress" class="progress"></section>
+
+    <main id="list" class="list">
+      <p class="loading">Loading today's contacts…</p>
+    </main>
+
+    <footer>
+      <button id="prevDay" class="ghost">← Yesterday</button>
+      <button id="resetToday" class="ghost">Today</button>
+      <button id="nextDay" class="ghost">Tomorrow →</button>
+    </footer>
+  </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script src="app.js"></script>
