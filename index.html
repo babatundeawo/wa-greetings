@@ -29,21 +29,23 @@
   <div id="app" style="display:none;">
     <header>
       <h1>🌿 Daily Greetings</h1>
-      <p id="dateLabel" class="subtle"></p>
+      <p class="subtle">Send as many as you like, whenever you like</p>
       <button id="signOutBtn" class="link-btn light">Sign out</button>
     </header>
 
-    <section id="progress" class="progress"></section>
+    <section id="controls" class="controls">
+      <input id="searchInput" type="search" placeholder="Search by name…" class="search-input">
+
+      <div id="labelFilters" class="label-filters"></div>
+
+      <div id="viewTabs" class="view-tabs"></div>
+
+      <div id="summary" class="summary"></div>
+    </section>
 
     <main id="list" class="list">
-      <p class="loading">Loading today's contacts…</p>
+      <p class="loading">Loading contacts…</p>
     </main>
-
-    <footer>
-      <button id="prevDay" class="ghost">← Yesterday</button>
-      <button id="resetToday" class="ghost">Today</button>
-      <button id="nextDay" class="ghost">Tomorrow →</button>
-    </footer>
   </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daily-greetings-v2';
+const CACHE_NAME = 'daily-greetings-v3';
 const ASSETS = [
   './',
   './index.html',

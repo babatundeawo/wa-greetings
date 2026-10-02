@@ -1,55 +1,77 @@
 # Daily Greetings
 
-A small installable web app (PWA) that gives you 20 people to send a WhatsApp
-greeting to each day, cycling through your contact list so everyone eventually
-gets a turn. Messages are elaborate prayer-style greetings with a Bible verse
-(KJV), themed by day of the week (and by new month on the 1st), and never use
-the recipient's name — so the tone stays respectful whether they're older,
-younger, or someone you barely know. Who's already been greeted is tracked
-in Firebase (Firestore), so it auto-syncs and survives re-uploading an
-updated contact list. The app itself is locked behind a sign-in screen so
-random visitors can't access it.
+A small installable web app (PWA) for sending WhatsApp greetings to your
+contacts — as many as you want, whenever you want, with no daily cap.
+Filter by Google Contacts label (RCCG, KBI Parents, Relatives, etc.) or
+search by name, tick people off as you message them, and come back
+whenever you like to pick up where you left off. Messages are elaborate
+prayer-style greetings with a Bible verse (KJV), themed by day of the week
+(and by new month on the 1st), and never use the recipient's name — so the
+tone stays respectful whether they're older, younger, or someone you barely
+know. Who's already been messaged is tracked in Firebase (Firestore), so it
+auto-syncs across devices and survives re-uploading an updated contact
+list. The app itself is locked behind a sign-in screen so random visitors
+can't access it.
 
-## How it works day to day
+## How it works
 
-- `contacts.json` holds your contacts (name + phone number) — the name is
-  only shown to *you* in the app's list, never inserted into the message
-  text itself.
-- Each day the app shows the next 20 contacts who **haven't been greeted yet
-  this round**, tracked by phone number in Firestore. Mark someone sent and
-  they won't reappear until everyone's had a turn, at which point a new
-  round starts automatically.
+- `contacts.json` holds your contacts — name, every phone number found for
+  them, and their Google Contacts labels. The name is only shown to *you*
+  in the app's list, never inserted into the message text itself.
+- **No daily limit.** There's no "today's batch" any more — the list just
+  shows contacts who are still **Pending**, and you work through as many as
+  you want in one sitting. Running a "Load more" button repeatedly, or
+  tapping "Show all", loads more of the list on demand — nothing is ever
+  locked behind "come back tomorrow."
+- **Filter by label**: the chips under the search box are pulled straight
+  from your Google Contacts labels (RCCG, KBI Parents, Relatives, Businesses,
+  etc. — whatever you've tagged people with), each showing how many
+  contacts carry it. Tap one or more to only show people with at least one
+  of the selected labels; tap "Clear label filters" to go back to
+  everyone. The generic "myContacts" label every contact has is left out
+  since it doesn't help filter anything.
+- **Search by name** using the search box at the top — useful for jumping
+  straight to one person instead of scrolling.
+- **Four views** (tabs under the search box), each showing a live count:
+  - **Pending** — not yet sent, not ignored (the default view).
+  - **Sent** — already marked sent.
+  - **Ignored** — permanently excluded (see below).
+  - **All** — everyone, regardless of status.
 - Each contact gets a personalized-by-day (not by name), editable greeting —
   a short prayer with a Bible verse reference — and a **Send on WhatsApp**
   button that opens WhatsApp with that contact's chat and the message
-  already typed in. Browsers can't send WhatsApp messages automatically,
-  so this one tap is as close as it gets.
+  already typed in. Browsers can't send WhatsApp messages automatically, so
+  this one tap is as close as it gets.
+- **Multiple phone numbers.** If someone has more than one number on file
+  (common for shared family lines or multiple SIMs), every number is kept —
+  none are silently dropped. The main **Send on WhatsApp** button uses
+  their first/primary number; any other numbers appear underneath as
+  "Other numbers on file" links using the same message, in case the
+  primary one turns out not to be on WhatsApp. Sent/ignored status is
+  tracked against the primary number only, so there's no risk of the same
+  person getting double-greeted through a second number.
 - Under each contact's message are two checkboxes: **Sent** and
   **Ignore (no WhatsApp / skip)**. Tick **Sent** for everyone you've
-  messaged, tick **Ignore** for anyone who shouldn't be in the rotation at
-  all (no WhatsApp, asked not to be contacted, etc.), then tap the single
-  **Save changes** button at the bottom of the list once — this commits
-  everything you've ticked in one go, rather than tapping something after
-  every single person.
-- Ignored contacts are excluded from the rotation permanently (not just for
-  today) until you come back and untick their "Ignore" box and save again.
-  They don't count toward the "X/Y greeted" total either.
+  messaged, tick **Ignore** for anyone who shouldn't be contacted at all,
+  then tap the single **Save changes** button at the bottom once — this
+  commits everything you've ticked in one go, rather than a round-trip per
+  person.
+- Ignored contacts are excluded permanently (not just today) until you
+  switch to the **Ignored** tab and untick their box. They don't count
+  toward the "pending" total either, and they're excluded from every other
+  view.
 - Greetings change with the day: Sunday carries a "new week" theme (the
   week is treated as starting on Sunday, not Monday), the other weekdays
   each carry their own theme (diligence, gratitude, grace, rest, etc.), and
   the 1st of every month switches to a "Happy New Month" prayer instead.
-- "Reset rotation" (under the progress line) clears everyone's sent status
-  so a new round begins — ignored contacts stay ignored through a reset.
-- "← Yesterday" / "Tomorrow →" only *preview* another day's batch based on
-  current sent/ignored status — the checkboxes are disabled on preview days
-  and "Save changes" only appears on "Today".
-- If you only get through some of the batch (say you tick and save 10 out
-  of 20), the rest simply carry over — they'll be at the front of
-  tomorrow's batch again, topped up with fresh people to reach 20. Nothing
-  is skipped. The flip side: the app only knows someone's "sent" because
-  you ticked the box and saved — there's no way for it to detect an actual
-  WhatsApp send, so if you send but forget to tick it, that person will
-  show up again.
+- **"Reset all 'sent' status"** (under the summary line) clears everyone's
+  sent status so the whole pending list is available again — useful once
+  you've worked all the way through everyone and want to start a fresh
+  round. Ignored contacts stay ignored through a reset.
+- The app only knows someone's "sent" because you ticked the box and
+  saved — there's no way for it to detect an actual WhatsApp send, so if
+  you send but forget to tick it, that person will show up again under
+  Pending.
 - You must sign in to see any of this — see "Login / access control" below.
 
 ## One-time setup
@@ -171,26 +193,31 @@ From now on, updating is fully automatic:
    (via the GitHub web UI's "upload file", or `git add`/`commit`/`push`).
 3. That's it. Pushing a change to `data/contacts.csv` triggers the
    **Sync contacts from CSV** GitHub Action automatically, which:
-   - Re-parses the CSV into `contacts.json`.
-   - Reads Firestore to see who's already been greeted this round, and who's
-     been marked "Ignore" in the app.
-   - Writes `pending.json` (not yet greeted), `sent.json` (already
-     greeted), and `ignored.json` (excluded from the rotation) for your own
+   - Re-parses the CSV into `contacts.json` — extracting every phone
+     number per person (not just the first one) and their Google Contacts
+     labels.
+   - Reads Firestore to see who's already been messaged, and who's been
+     marked "Ignore" in the app.
+   - Writes `pending.json`, `sent.json`, and `ignored.json` for your own
      reference.
    - Commits all four files back to the repo — GitHub Pages redeploys on
      its own shortly after.
 4. Reopen the app — no other steps needed.
 
-**Why nobody gets double-greeted after an update:** the app never decides
+**Why nobody gets double-messaged after an update:** the app never decides
 "who's sent" from the CSV or from list position — that always comes from
-Firestore, matched by phone number. So:
+Firestore, matched by each contact's primary phone number. So:
 
 - Anyone already marked sent in Firestore stays skipped, regardless of
   where they now sit in the file or how many contacts you have.
-- New contacts (new phone numbers) automatically join the queue.
+- New contacts (new primary phone numbers) automatically join Pending.
 - If someone's removed from the CSV, they just vanish — no gap.
-- If a contact's number itself changes, that counts as a new contact
-  (matching is strictly by number), so it'll be greeted again fresh.
+- If a contact's primary number itself changes, that counts as a new
+  contact (matching is strictly by that number), so it'll show as pending
+  again under the new number.
+- Extra numbers for an existing contact (second, third phone columns) can
+  change freely between syncs without affecting their sent/ignored status,
+  since only the primary number is tracked.
 
 You can check `pending.json` / `sent.json` / `ignored.json` any time after a
 sync to see exactly who's left, who's done, and who's excluded — they're
@@ -224,3 +251,16 @@ date, so it varies from person to person and day to day without needing
 you to track anything. Bible verses used are King James Version (public
 domain) wording, cited by reference — feel free to swap in different verses
 or wording of your own.
+
+You can also change `DEFAULT_VISIBLE` (how many contacts show up before you
+need to tap "Load more" — 20 by default) and `LOAD_MORE_OPTIONS` (the quick
+"+N more" buttons offered — 10/20/50/100 by default) near the top of
+`app.js` if you want different defaults.
+
+## A note on very large loads
+
+Tapping "Show all" on a big filtered list (hundreds of contacts) will
+render that many cards at once, which is fine on a reasonably modern phone
+but can feel sluggish on an older or low-memory device — if that happens,
+prefer the smaller "+10 more" / "+20 more" buttons and work through the
+list in chunks instead.

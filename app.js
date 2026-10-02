@@ -1,5 +1,10 @@
 // ---- Configuration ----
-const BATCH_SIZE = 20;
+
+// How many contacts to show at once by default, and the quick "load more"
+// increments. There is no daily cap any more — load more adds onto what's
+// already shown, any number of times, in one sitting or across many.
+const DEFAULT_VISIBLE = 20;
+const LOAD_MORE_OPTIONS = [10, 20, 50, 100];
 
 // All greetings are deliberately written WITHOUT using the contact's name —
 // a generic respectful salutation is used instead ("Good morning", "Dear
@@ -80,22 +85,27 @@ try {
   db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 } catch (e) { /* not supported in this browser, ignore */ }
 
-// Single doc holds the whole rotation state: which phone numbers have been
-// greeted this round, and which round we're on. A subcollection holds one
-// doc per calendar date, locking in that day's batch of phone numbers.
+// Single doc holds everything: which primary phone numbers have been sent
+// to, and which are permanently ignored (no WhatsApp, asked not to be
+// contacted, etc). No day-based locking — you can send to as many people
+// as you want in one sitting, any time.
 const STATE_REF = db.collection('rotation').doc('state');
-function batchRef(dateKey) {
-  return STATE_REF.collection('batches').doc(dateKey);
-}
 
-let contacts = [];
-let contactsByPhone = {};
-let dayOffset = 0; // 0 = today (live), +1/-1 = preview only, never persisted
+let contacts = [];          // full list from contacts.json
+let contactsByPhone = {};   // keyed by each contact's PRIMARY phone number
+let allLabelCounts = [];    // [{label, count}], sorted by frequency desc
+
+let selectedLabels = new Set(); // labels currently filtering the list (OR match)
+let searchQuery = '';
+let viewMode = 'pending'; // 'pending' | 'sent' | 'ignored' | 'all'
+let visibleCount = DEFAULT_VISIBLE;
 let busy = false; // guards against double-taps while a Firestore write is in flight
 
 const listEl = document.getElementById('list');
-const dateLabelEl = document.getElementById('dateLabel');
-const progressEl = document.getElementById('progress');
+const summaryEl = document.getElementById('summary');
+const labelFiltersEl = document.getElementById('labelFilters');
+const viewTabsEl = document.getElementById('viewTabs');
+const searchInputEl = document.getElementById('searchInput');
 const appEl = document.getElementById('app');
 const loginEl = document.getElementById('login');
 const loginForm = document.getElementById('loginForm');
@@ -109,10 +119,6 @@ function dateOnly(d) {
 function fmtDateKey(d) {
   const dd = dateOnly(d);
   return `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}-${String(dd.getDate()).padStart(2, '0')}`;
-}
-
-function fmtDateLabel(d) {
-  return d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 function timeOfDay() {
@@ -141,18 +147,17 @@ function waLink(phone, message) {
 
 async function getState() {
   const snap = await STATE_REF.get();
-  if (!snap.exists) return { sentPhones: [], ignoredPhones: [], round: 1 };
+  if (!snap.exists) return { sentPhones: [], ignoredPhones: [] };
   const data = snap.data();
   return {
     sentPhones: data.sentPhones || [],
     ignoredPhones: data.ignoredPhones || [],
-    round: data.round || 1,
   };
 }
 
 // Applies a batch of checkbox changes (sent + ignore) in one atomic write,
-// so checking 20 boxes and tapping "Save changes" once only costs a single
-// round-trip to Firestore instead of one write per person.
+// so checking many boxes and tapping "Save changes" once only costs a
+// single round-trip to Firestore instead of one write per person.
 async function commitChanges({ sentAdd, sentRemove, ignoreAdd, ignoreRemove }) {
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(STATE_REF);
@@ -168,129 +173,97 @@ async function commitChanges({ sentAdd, sentRemove, ignoreAdd, ignoreRemove }) {
     tx.set(STATE_REF, {
       sentPhones: [...sentSet],
       ignoredPhones: [...ignoredSet],
-      round: data.round || 1,
     }, { merge: true });
   });
 }
 
-// Picks the next BATCH_SIZE contacts that are neither sent nor ignored this
-// round (auto-starts a new round if everyone active has been done).
-// Ignored contacts are excluded permanently, not just for this round.
-async function computeNextBatch(forPreviewOnly) {
-  const state = await getState();
-  let sentSet = new Set(state.sentPhones);
-  const ignoredSet = new Set(state.ignoredPhones);
-  const activeContacts = contacts.filter((c) => !ignoredSet.has(c.phone));
-  let unsent = activeContacts.filter((c) => !sentSet.has(c.phone));
-  let round = state.round;
-
-  if (unsent.length === 0 && activeContacts.length > 0) {
-    round += 1;
-    if (!forPreviewOnly) {
-      await STATE_REF.set({ sentPhones: [], round }, { merge: true });
-    }
-    unsent = activeContacts.slice();
-  }
-
-  return { phones: unsent.slice(0, BATCH_SIZE).map((c) => c.phone), round };
+async function resetAllSent() {
+  // Clears everyone's "sent" status so the whole list is eligible again.
+  // Ignored contacts stay ignored — this never touches ignoredPhones.
+  await STATE_REF.set({ sentPhones: [] }, { merge: true });
 }
 
-async function getOrCreateTodayBatch() {
-  const dateKey = fmtDateKey(new Date());
-  const ref = batchRef(dateKey);
-  const snap = await ref.get();
+// ---- Filtering ----
 
-  if (!snap.exists) {
-    const { phones } = await computeNextBatch(false);
-    await ref.set({ phones, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-    return phones;
-  }
-
-  // Drop any phone numbers no longer in contacts.json, top back up if room opened up.
-  let phones = (snap.data().phones || []).filter((phone) => contactsByPhone[phone]);
-  if (phones.length < BATCH_SIZE) {
-    const state = await getState();
-    const sentSet = new Set(state.sentPhones);
-    const ignoredSet = new Set(state.ignoredPhones);
-    const already = new Set(phones);
-    const fillers = contacts
-      .filter((c) => !sentSet.has(c.phone) && !ignoredSet.has(c.phone) && !already.has(c.phone))
-      .slice(0, BATCH_SIZE - phones.length)
-      .map((c) => c.phone);
-    phones = phones.concat(fillers);
-    await ref.set({ phones }, { merge: true });
-  }
-  return phones;
+function buildLabelCounts() {
+  const counts = new Map();
+  contacts.forEach((c) => {
+    (c.labels || []).forEach((l) => counts.set(l, (counts.get(l) || 0) + 1));
+  });
+  allLabelCounts = [...counts.entries()]
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
-async function resetRotation() {
-  // Only resets who's been greeted this round — ignored contacts (no
-  // WhatsApp, shouldn't be messaged, etc.) stay ignored across resets.
-  await STATE_REF.set(
-    { sentPhones: [], round: firebase.firestore.FieldValue.increment(1) },
-    { merge: true }
-  );
-  await batchRef(fmtDateKey(new Date())).delete().catch(() => {});
+function matchesFilters(contact) {
+  if (selectedLabels.size > 0) {
+    const labels = contact.labels || [];
+    if (!labels.some((l) => selectedLabels.has(l))) return false;
+  }
+  if (searchQuery) {
+    if (!contact.name.toLowerCase().includes(searchQuery)) return false;
+  }
+  return true;
+}
+
+// Returns the list of contacts for the current view (pending/sent/ignored/all),
+// given the current sent/ignored sets and label+search filters.
+function computeViewList(sentSet, ignoredSet) {
+  return contacts.filter((c) => {
+    const isIgnored = ignoredSet.has(c.phone);
+    const isSent = sentSet.has(c.phone);
+    if (viewMode === 'pending' && (isIgnored || isSent)) return false;
+    if (viewMode === 'sent' && (isIgnored || !isSent)) return false;
+    if (viewMode === 'ignored' && !isIgnored) return false;
+    // 'all' shows everyone regardless of sent/ignored
+    return matchesFilters(c);
+  });
 }
 
 // ---- Rendering ----
 
 async function render() {
-  const viewDate = new Date();
-  viewDate.setDate(viewDate.getDate() + dayOffset);
-  dateLabelEl.textContent = fmtDateLabel(viewDate) + (dayOffset === 0 ? ' (Today)' : '');
-
   contactsByPhone = {};
   contacts.forEach((c) => { contactsByPhone[c.phone] = c; });
-
-  listEl.innerHTML = '<p class="loading">Loading…</p>';
 
   const state = await getState();
   const sentSet = new Set(state.sentPhones);
   const ignoredSet = new Set(state.ignoredPhones);
   const activeContacts = contacts.filter((c) => !ignoredSet.has(c.phone));
-  const total = activeContacts.length;
-  const greetedSoFar = activeContacts.filter((c) => sentSet.has(c.phone)).length;
 
-  let phones, round;
-  if (dayOffset === 0) {
-    phones = await getOrCreateTodayBatch();
-    round = (await getState()).round;
-  } else {
-    const result = await computeNextBatch(true);
-    phones = result.phones;
-    round = result.round;
-  }
+  renderLabelFilters();
+  renderViewTabs(sentSet, ignoredSet);
 
-  progressEl.innerHTML = total
-    ? `Round #${state.round} · ${greetedSoFar}/${total} greeted so far` +
-      (ignoredSet.size ? ` · ${ignoredSet.size} ignored` : '') +
-      (dayOffset !== 0 ? ' <em>(preview)</em>' : '') +
-      `<br><button id="resetRound" class="link-btn">Reset rotation</button>`
-    : '';
-  const resetBtn = document.getElementById('resetRound');
+  summaryEl.innerHTML =
+    `${contacts.length} contacts total · ${activeContacts.length - activeContacts.filter((c) => sentSet.has(c.phone)).length} pending · ` +
+    `${sentSet.size} sent · ${ignoredSet.size} ignored` +
+    `<br><button id="resetSentBtn" class="link-btn">Reset all "sent" status</button>`;
+  const resetBtn = document.getElementById('resetSentBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', async () => {
-      if (confirm('Reset the rotation? Everyone (except ignored contacts) will be eligible to be greeted again from the top of the list.')) {
-        await resetRotation();
+      if (confirm('Reset "sent" status for everyone? Ignored contacts stay ignored. This cannot be undone.')) {
+        await resetAllSent();
         render();
       }
     });
   }
 
+  const viewList = computeViewList(sentSet, ignoredSet);
+  const viewDate = new Date();
+
   listEl.innerHTML = '';
-  if (phones.length === 0) {
-    listEl.innerHTML = '<p class="loading">No contacts loaded.</p>';
+  if (viewList.length === 0) {
+    listEl.innerHTML = '<p class="loading">No contacts match the current filters.</p>';
     return;
   }
+
+  const visible = viewList.slice(0, visibleCount);
 
   // Tracks each visible card's checkboxes so "Save changes" can read all of
   // them at once and diff against what was already stored.
   const cardStates = [];
 
-  phones.forEach((phone, i) => {
-    const contact = contactsByPhone[phone];
-    if (!contact) return;
+  visible.forEach((contact, i) => {
     const message = greetingFor(contact, viewDate);
     const wasSent = sentSet.has(contact.phone);
     const wasIgnored = ignoredSet.has(contact.phone);
@@ -300,10 +273,14 @@ async function render() {
 
     const top = document.createElement('div');
     top.className = 'card-top';
+    const labelsHtml = (contact.labels || []).length
+      ? `<div class="card-labels">${contact.labels.map((l) => `<span class="label-chip-mini">${escapeHtml(l)}</span>`).join('')}</div>`
+      : '';
     top.innerHTML = `
       <div>
         <div class="card-name">${i + 1}. ${escapeHtml(contact.name)}</div>
         <div class="card-phone">+${contact.phone}</div>
+        ${labelsHtml}
       </div>
     `;
     card.appendChild(top);
@@ -323,8 +300,37 @@ async function render() {
     sendBtn.href = waLink(contact.phone, textarea.value);
     textarea.addEventListener('input', () => {
       sendBtn.href = waLink(contact.phone, textarea.value);
+      altLinks.forEach((a) => { a.href = waLink(a.dataset.phone, textarea.value); });
     });
     actions.appendChild(sendBtn);
+    card.appendChild(textarea);
+    card.appendChild(actions);
+
+    // Extra numbers for this same person — not separate greetings, just
+    // alternate numbers to try the same message on if the primary one
+    // isn't on WhatsApp.
+    const altLinks = [];
+    const altNumbers = (contact.phones || []).filter((p) => p !== contact.phone);
+    if (altNumbers.length > 0) {
+      const altWrap = document.createElement('div');
+      altWrap.className = 'alt-numbers';
+      const label = document.createElement('span');
+      label.className = 'alt-numbers-label';
+      label.textContent = 'Other number' + (altNumbers.length > 1 ? 's' : '') + ' on file: ';
+      altWrap.appendChild(label);
+      altNumbers.forEach((p) => {
+        const a = document.createElement('a');
+        a.className = 'alt-link';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.dataset.phone = p;
+        a.href = waLink(p, textarea.value);
+        a.textContent = '+' + p;
+        altLinks.push(a);
+        altWrap.appendChild(a);
+      });
+      card.appendChild(altWrap);
+    }
 
     const checks = document.createElement('div');
     checks.className = 'card-checks';
@@ -333,7 +339,6 @@ async function render() {
     const sentCheckbox = document.createElement('input');
     sentCheckbox.type = 'checkbox';
     sentCheckbox.checked = wasSent;
-    sentCheckbox.disabled = dayOffset !== 0; // only "Today" can actually be saved
     sentLabel.appendChild(sentCheckbox);
     sentLabel.appendChild(document.createTextNode(' Sent'));
 
@@ -341,60 +346,134 @@ async function render() {
     const ignoreCheckbox = document.createElement('input');
     ignoreCheckbox.type = 'checkbox';
     ignoreCheckbox.checked = wasIgnored;
-    ignoreCheckbox.disabled = dayOffset !== 0;
     ignoreLabel.appendChild(ignoreCheckbox);
     ignoreLabel.appendChild(document.createTextNode(' Ignore (no WhatsApp / skip)'));
 
     checks.appendChild(sentLabel);
     checks.appendChild(ignoreLabel);
-
-    card.appendChild(textarea);
-    card.appendChild(actions);
     card.appendChild(checks);
+
     listEl.appendChild(card);
 
     cardStates.push({ phone: contact.phone, wasSent, wasIgnored, sentCheckbox, ignoreCheckbox });
   });
 
-  if (dayOffset === 0) {
-    const saveWrap = document.createElement('div');
-    saveWrap.className = 'save-wrap';
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'send-btn';
-    saveBtn.textContent = 'Save changes';
-    saveWrap.appendChild(saveBtn);
-    const saveMsg = document.createElement('p');
-    saveMsg.className = 'save-msg';
-    saveWrap.appendChild(saveMsg);
-    listEl.appendChild(saveWrap);
-
-    saveBtn.addEventListener('click', async () => {
-      if (busy) return;
-      const sentAdd = [], sentRemove = [], ignoreAdd = [], ignoreRemove = [];
-      cardStates.forEach((cs) => {
-        if (cs.sentCheckbox.checked && !cs.wasSent) sentAdd.push(cs.phone);
-        if (!cs.sentCheckbox.checked && cs.wasSent) sentRemove.push(cs.phone);
-        if (cs.ignoreCheckbox.checked && !cs.wasIgnored) ignoreAdd.push(cs.phone);
-        if (!cs.ignoreCheckbox.checked && cs.wasIgnored) ignoreRemove.push(cs.phone);
+  // "Load more" — adds onto what's already shown, as many times as wanted.
+  const remaining = viewList.length - visible.length;
+  if (remaining > 0) {
+    const loadWrap = document.createElement('div');
+    loadWrap.className = 'load-more-wrap';
+    LOAD_MORE_OPTIONS.forEach((n) => {
+      if (n > remaining && n !== Math.min(...LOAD_MORE_OPTIONS)) return; // skip options that don't make sense, but always keep the smallest
+      const btn = document.createElement('button');
+      btn.className = 'ghost';
+      btn.textContent = `+${Math.min(n, remaining)} more`;
+      btn.addEventListener('click', () => {
+        visibleCount += n;
+        render();
       });
-      if (!sentAdd.length && !sentRemove.length && !ignoreAdd.length && !ignoreRemove.length) {
-        saveMsg.textContent = 'No changes to save.';
-        return;
-      }
-      busy = true;
-      saveBtn.disabled = true;
-      saveMsg.textContent = 'Saving…';
-      try {
-        await commitChanges({ sentAdd, sentRemove, ignoreAdd, ignoreRemove });
-        await render();
-      } catch (err) {
-        saveMsg.textContent = 'Could not save — check your connection and try again.';
-        saveBtn.disabled = false;
-      } finally {
-        busy = false;
-      }
+      loadWrap.appendChild(btn);
     });
+    const allBtn = document.createElement('button');
+    allBtn.className = 'ghost';
+    allBtn.textContent = `Show all ${viewList.length}`;
+    allBtn.addEventListener('click', () => {
+      visibleCount = viewList.length;
+      render();
+    });
+    loadWrap.appendChild(allBtn);
+    listEl.appendChild(loadWrap);
   }
+
+  const saveWrap = document.createElement('div');
+  saveWrap.className = 'save-wrap';
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'send-btn';
+  saveBtn.textContent = 'Save changes';
+  saveWrap.appendChild(saveBtn);
+  const saveMsg = document.createElement('p');
+  saveMsg.className = 'save-msg';
+  saveWrap.appendChild(saveMsg);
+  listEl.appendChild(saveWrap);
+
+  saveBtn.addEventListener('click', async () => {
+    if (busy) return;
+    const sentAdd = [], sentRemove = [], ignoreAdd = [], ignoreRemove = [];
+    cardStates.forEach((cs) => {
+      if (cs.sentCheckbox.checked && !cs.wasSent) sentAdd.push(cs.phone);
+      if (!cs.sentCheckbox.checked && cs.wasSent) sentRemove.push(cs.phone);
+      if (cs.ignoreCheckbox.checked && !cs.wasIgnored) ignoreAdd.push(cs.phone);
+      if (!cs.ignoreCheckbox.checked && cs.wasIgnored) ignoreRemove.push(cs.phone);
+    });
+    if (!sentAdd.length && !sentRemove.length && !ignoreAdd.length && !ignoreRemove.length) {
+      saveMsg.textContent = 'No changes to save.';
+      return;
+    }
+    busy = true;
+    saveBtn.disabled = true;
+    saveMsg.textContent = 'Saving…';
+    try {
+      await commitChanges({ sentAdd, sentRemove, ignoreAdd, ignoreRemove });
+      await render();
+    } catch (err) {
+      saveMsg.textContent = 'Could not save — check your connection and try again.';
+      saveBtn.disabled = false;
+    } finally {
+      busy = false;
+    }
+  });
+}
+
+function renderLabelFilters() {
+  labelFiltersEl.innerHTML = '';
+  allLabelCounts.forEach(({ label, count }) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'label-chip' + (selectedLabels.has(label) ? ' active' : '');
+    chip.textContent = `${label} (${count})`;
+    chip.addEventListener('click', () => {
+      if (selectedLabels.has(label)) selectedLabels.delete(label); else selectedLabels.add(label);
+      visibleCount = DEFAULT_VISIBLE;
+      render();
+    });
+    labelFiltersEl.appendChild(chip);
+  });
+  if (selectedLabels.size > 0) {
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'label-chip clear';
+    clearBtn.textContent = 'Clear label filters ✕';
+    clearBtn.addEventListener('click', () => {
+      selectedLabels.clear();
+      visibleCount = DEFAULT_VISIBLE;
+      render();
+    });
+    labelFiltersEl.appendChild(clearBtn);
+  }
+}
+
+function renderViewTabs(sentSet, ignoredSet) {
+  const activeContacts = contacts.filter((c) => !ignoredSet.has(c.phone) && matchesFilters(c));
+  const allMatching = contacts.filter(matchesFilters);
+  const tabs = [
+    { key: 'pending', label: 'Pending', count: activeContacts.filter((c) => !sentSet.has(c.phone)).length },
+    { key: 'sent', label: 'Sent', count: activeContacts.filter((c) => sentSet.has(c.phone)).length },
+    { key: 'ignored', label: 'Ignored', count: allMatching.filter((c) => ignoredSet.has(c.phone)).length },
+    { key: 'all', label: 'All', count: allMatching.length },
+  ];
+  viewTabsEl.innerHTML = '';
+  tabs.forEach((t) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'view-tab' + (viewMode === t.key ? ' active' : '');
+    btn.textContent = `${t.label} (${t.count})`;
+    btn.addEventListener('click', () => {
+      viewMode = t.key;
+      visibleCount = DEFAULT_VISIBLE;
+      render();
+    });
+    viewTabsEl.appendChild(btn);
+  });
 }
 
 function escapeHtml(str) {
@@ -403,15 +482,22 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-document.getElementById('prevDay').addEventListener('click', () => { dayOffset -= 1; render(); });
-document.getElementById('nextDay').addEventListener('click', () => { dayOffset += 1; render(); });
-document.getElementById('resetToday').addEventListener('click', () => { dayOffset = 0; render(); });
+let searchDebounce = null;
+searchInputEl.addEventListener('input', () => {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    searchQuery = searchInputEl.value.trim().toLowerCase();
+    visibleCount = DEFAULT_VISIBLE;
+    render();
+  }, 200);
+});
 
 function loadContactsAndRender() {
   fetch('contacts.json')
     .then((r) => r.json())
     .then((data) => {
       contacts = data;
+      buildLabelCounts();
       render();
     })
     .catch(() => {
