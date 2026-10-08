@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com; manifest-src 'self'; worker-src 'self'; form-action 'self'; base-uri 'self'">
+<meta name="referrer" content="no-referrer">
+<title>Daily Greetings</title>
+<meta name="description" content="A private WhatsApp greeting assistant: themed prayer messages with a Bible verse, ready to send in one tap.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#f4f5fb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0c0e22" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="js/theme-init.js"></script>
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0 4 4m-4-4L8 8M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/></symbol>
+</svg>
+
+<a class="skip-link" href="#list">Skip to contacts</a>
+
+<noscript>
+  <section class="auth"><div class="auth__card">
+    <h1 class="auth__title">Daily Greetings</h1>
+    <p class="auth__lead">This app needs JavaScript to sign you in and load your contacts. Turn it on in your browser settings, then reload.</p>
+  </div></section>
+</noscript>
+
+<!-- Sign in -->
+<main id="login" class="auth" aria-labelledby="login-title">
+  <div class="auth__card">
+    <div class="auth__brand">
+      <img class="auth__logo" src="icons/icon.svg" width="56" height="56" alt="">
+      <h1 id="login-title" class="auth__title">Daily Greetings</h1>
+      <p class="auth__lead">Sign in to open your contacts and today's messages.</p>
+    </div>
+    <form id="loginForm" class="auth__form" novalidate>
+      <div class="field">
+        <label class="field__label" for="loginEmail">Email</label>
+        <input class="input" id="loginEmail" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" required>
+      </div>
+      <div class="field">
+        <label class="field__label" for="loginPassword">Password</label>
+        <div class="input-wrap">
+          <input class="input" id="loginPassword" type="password" autocomplete="current-password" required>
+          <button class="icon-btn" id="togglePassword" type="button" aria-label="Show password" aria-pressed="false">
+            <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+          </button>
+        </div>
+      </div>
+      <p id="loginError" class="form-error" role="alert"></p>
+      <button class="btn btn--block" id="loginSubmit" type="submit">Sign in</button>
+    </form>
+  </div>
+</main>
+
+<!-- App -->
+<div id="app" hidden>
+  <div id="offline" class="banner" role="status" hidden>You are offline. Changes will not save until you reconnect.</div>
+
+  <header class="topbar" id="topbar">
+    <div class="topbar__inner">
+      <h1 class="brand">
+        <img class="brand__mark" src="icons/icon.svg" width="32" height="32" alt="">
+        Daily Greetings
+      </h1>
+      <div class="topbar__actions">
+        <button class="icon-btn" id="importBtn" type="button" aria-label="Import contacts" title="Import contacts">
+          <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+        </button>
+        <button class="icon-btn theme-btn" id="themeBtn" type="button" aria-label="Switch to dark theme" title="Switch theme">
+          <svg class="icon icon-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+          <svg class="icon icon-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        </button>
+        <button class="icon-btn" id="signOutBtn" type="button" aria-label="Sign out" title="Sign out">
+          <svg class="icon" aria-hidden="true"><use href="#i-logout"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout" id="layout">
+    <aside class="panel" aria-label="Today and filters">
+      <section class="today enter" aria-labelledby="todayDay">
+        <h2 class="today__day" id="todayDay"></h2>
+        <p class="today__theme" id="todayTheme"></p>
+        <div class="progress">
+          <div class="progress__bar" role="progressbar" id="progressBar" aria-label="Contacts greeted" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress__fill" id="progressFill"></span></div>
+          <p class="progress__text"><span id="progressSent"></span><span id="progressPending"></span></p>
+        </div>
+      </section>
+
+      <div class="search enter">
+        <label class="sr-only" for="searchInput">Search by name</label>
+        <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+        <input class="input" id="searchInput" type="search" placeholder="Search by name" autocomplete="off" enterkeyhint="search">
+      </div>
+
+      <div id="labelFilters" class="enter"></div>
+
+      <div id="viewTabs" class="segmented enter" role="group" aria-label="Show contacts"></div>
+
+      <div class="panel__footer">
+        <button class="text-btn" id="resetSentBtn" type="button">Reset sent status</button>
+      </div>
+    </aside>
+
+    <main id="list" class="list" tabindex="-1" aria-busy="true"></main>
+  </div>
+
+  <div id="savebar" class="savebar" role="region" aria-label="Unsaved changes" hidden>
+    <span class="savebar__text" id="savebarText"></span>
+    <button class="btn btn--ghost" id="discardBtn" type="button">Discard</button>
+    <button class="btn" id="saveBtn" type="button">Save changes</button>
+  </div>
+</div>
+
+<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+
+<!-- Import contacts -->
+<dialog id="importDialog" class="dialog" aria-labelledby="importTitle">
+  <div class="dialog__body">
+    <h2 class="dialog__title" id="importTitle">Import contacts</h2>
+    <p class="dialog__text">Choose a Google Contacts CSV export. The file is read on your device and saved to your private database. Anyone already marked as sent stays marked.</p>
+    <div class="dropzone">
+      <label for="importFile" class="field__label">Contacts file (.csv or .json)</label>
+      <input id="importFile" type="file" accept=".csv,.json,text/csv,application/json">
+    </div>
+    <div id="importPreview" hidden>
+      <ul class="stats">
+        <li><strong id="statAdded">0</strong><span>New</span></li>
+        <li><strong id="statKept">0</strong><span>Already here</span></li>
+        <li><strong id="statRemoved">0</strong><span>Will be removed</span></li>
+      </ul>
+    </div>
+    <p id="importError" class="form-error" role="alert"></p>
+    <div class="dialog__actions">
+      <button class="btn btn--ghost" id="importCancel" type="button">Cancel</button>
+      <button class="btn" id="importConfirm" type="button" disabled>Import</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Confirm reset -->
+<dialog id="confirmDialog" class="dialog" aria-labelledby="confirmTitle">
+  <div class="dialog__body">
+    <h2 class="dialog__title" id="confirmTitle">Reset sent status?</h2>
+    <p class="dialog__text">Everyone goes back to Pending so you can start a fresh round. This cannot be undone.</p>
+    <div class="dialog__actions">
+      <button class="btn btn--ghost" id="confirmCancel" type="button">Keep as is</button>
+      <button class="btn btn--danger" id="confirmReset" type="button">Reset everyone</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

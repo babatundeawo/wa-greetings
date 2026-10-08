@@ -1,0 +1,202 @@
+/*
+ * Design tokens for Daily Greetings.
+ * Brand: calm, warm, devout. Deep dusk indigo for structure, a marigold
+ * "sunrise" accent used sparingly, and WhatsApp-adjacent green reserved for
+ * the one action that sends a message.
+ */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("../fonts/bricolage-grotesque-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("../fonts/instrument-sans-latin-wght-normal.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* ---- Palette: light ---- */
+  --bg: #f4f5fb;
+  --surface: #ffffff;
+  --surface-2: #eceef8;
+  --line: #dcdfee;
+  --line-strong: #c4c8de;
+  --text: #14173a;
+  --text-muted: #565b80;
+
+  --primary: #3a3fb8;
+  --primary-hover: #2e3399;
+  --primary-tint: #e6e7fa;
+  --on-primary: #ffffff;
+
+  --accent: #f2a41f;
+  --accent-tint: #fdf0d5;
+  --on-accent: #3a2600;
+
+  --send: #0b7a55;
+  --send-hover: #096a49;
+  --on-send: #ffffff;
+
+  --sent-bg: #e6f5ec;
+  --sent-line: #bfe3cf;
+  --bubble: #eef0fb;
+
+  --success: #1b7f55;
+  --success-tint: #e1f4ea;
+  --warning: #8a5a00;
+  --warning-tint: #fdf0d5;
+  --error: #b3261e;
+  --error-tint: #fde8e6;
+  --info: #2158b8;
+  --info-tint: #e3ecfb;
+
+  --focus: #3a3fb8;
+  --scrim: rgb(20 23 58 / 0.55);
+
+  /* ---- Typography ---- */
+  --font-display: "Bricolage Grotesque", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.86rem);
+  --step-0: clamp(0.95rem, 0.92rem + 0.15vw, 1.02rem);
+  --step-1: clamp(1.1rem, 1.05rem + 0.25vw, 1.25rem);
+  --step-2: clamp(1.35rem, 1.2rem + 0.7vw, 1.75rem);
+  --step-3: clamp(1.9rem, 1.5rem + 1.8vw, 2.9rem);
+  --leading-body: 1.55;
+  --tracking-display: -0.025em;
+
+  /* ---- Space (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* ---- Shape ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --border: 1px solid var(--line);
+
+  /* ---- Elevation ---- */
+  --shadow-sm: 0 1px 2px rgb(20 23 58 / 0.06), 0 1px 1px rgb(20 23 58 / 0.04);
+  --shadow-md: 0 6px 18px -6px rgb(20 23 58 / 0.18), 0 2px 4px rgb(20 23 58 / 0.05);
+  --shadow-lg: 0 24px 48px -16px rgb(20 23 58 / 0.35);
+
+  /* ---- Layering ---- */
+  --z-sticky: 20;
+  --z-dropdown: 30;
+  --z-savebar: 40;
+  --z-dialog: 50;
+  --z-toast: 60;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 480ms;
+
+  /* ---- Layout ---- */
+  --container: 72rem;
+  --touch: 2.75rem; /* 44px minimum target */
+}
+
+/* ---- Palette: dark (system preference, unless the user chose light) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0e22;
+    --surface: #151836;
+    --surface-2: #1d2147;
+    --line: #2a2f5e;
+    --line-strong: #3b4180;
+    --text: #eceeff;
+    --text-muted: #a3a8d0;
+
+    --primary: #8e93ff;
+    --primary-hover: #a6aaff;
+    --primary-tint: #232658;
+    --on-primary: #0c0e22;
+
+    --accent-tint: #3a2c0c;
+    --on-accent: #ffe7b3;
+
+    --send: #2dbe86;
+    --send-hover: #43cf99;
+    --on-send: #04281b;
+
+    --sent-bg: #11301f;
+    --sent-line: #1f5a3b;
+    --bubble: #1d2147;
+
+    --success: #4cd39b;
+    --success-tint: #11301f;
+    --warning: #f2b84a;
+    --warning-tint: #3a2c0c;
+    --error: #ff8a80;
+    --error-tint: #421a17;
+    --info: #8db4ff;
+    --info-tint: #16264d;
+
+    --focus: #a6aaff;
+    --scrim: rgb(5 6 18 / 0.7);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 6px 18px -6px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 24px 48px -16px rgb(0 0 0 / 0.7);
+  }
+}
+
+/* ---- Palette: dark (explicit choice) ---- */
+:root[data-theme="dark"] {
+  --bg: #0c0e22;
+  --surface: #151836;
+  --surface-2: #1d2147;
+  --line: #2a2f5e;
+  --line-strong: #3b4180;
+  --text: #eceeff;
+  --text-muted: #a3a8d0;
+
+  --primary: #8e93ff;
+  --primary-hover: #a6aaff;
+  --primary-tint: #232658;
+  --on-primary: #0c0e22;
+
+  --accent-tint: #3a2c0c;
+  --on-accent: #ffe7b3;
+
+  --send: #2dbe86;
+  --send-hover: #43cf99;
+  --on-send: #04281b;
+
+  --sent-bg: #11301f;
+  --sent-line: #1f5a3b;
+  --bubble: #1d2147;
+
+  --success: #4cd39b;
+  --success-tint: #11301f;
+  --warning: #f2b84a;
+  --warning-tint: #3a2c0c;
+  --error: #ff8a80;
+  --error-tint: #421a17;
+  --info: #8db4ff;
+  --info-tint: #16264d;
+
+  --focus: #a6aaff;
+  --scrim: rgb(5 6 18 / 0.7);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 18px -6px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 24px 48px -16px rgb(0 0 0 / 0.7);
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
