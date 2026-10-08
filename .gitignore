@@ -1,0 +1,20 @@
+# Private data must never be committed. Contacts live in the private database.
+contacts*.csv
+contacts*.json
+pending.json
+sent.json
+ignored.json
+*.vcf
+serviceAccountKey*.json
+*-service-account*.json
+
+# Build and tooling output
+_site/
+.lighthouseci/
+node_modules/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

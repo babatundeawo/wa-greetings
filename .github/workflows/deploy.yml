@@ -1,0 +1,118 @@
+# Builds, checks and publishes the site to GitHub Pages.
+#   - Pull requests: run the checks only. Nothing is published.
+#   - Pushes to main (and the "Run workflow" button): run the checks, then publish.
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never run two deployments at once. A newer pull-request run replaces an older one;
+# a deployment in progress is allowed to finish.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 22
+
+      # A hard stop: contact lists must live in the private database, never in this repository.
+      - name: Make sure no contact data is committed
+        run: |
+          found="$(git ls-files | grep -Ei '(^|/)(contacts|contact-book|pending|sent|ignored)[^/]*\.(csv|json|vcf)$' || true)"
+          if [ -n "$found" ]; then
+            echo "::error::Contact data found in the repository. Remove these files and import contacts in the app instead:"
+            echo "$found"
+            exit 1
+          fi
+
+      - name: Check JavaScript syntax
+        run: |
+          for f in js/*.js sw.js firebase-config.js; do
+            node --check "$f" && echo "ok  $f"
+          done
+
+      - name: Check JSON files
+        run: |
+          node -e "for (const f of ['manifest.json']) { JSON.parse(require('fs').readFileSync(f, 'utf8')); console.log('ok  ' + f); }"
+
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html 404.html manifest.json sw.js robots.txt firebase-config.js css js fonts icons _site/
+          # The 404 page needs a base path. Real deployments set it properly; here "/" is enough to check links.
+          sed -i 's|__BASE__|/|' _site/404.html
+
+      # Reports problems without failing the run, so a flaky link never blocks a deployment.
+      - name: Check links
+        uses: lycheeverse/lychee-action@v2.9.0
+        continue-on-error: true
+        with:
+          args: --offline --no-progress --root-dir "${{ github.workspace }}/_site" "_site/**/*.html" README.md "docs/**/*.md"
+          fail: false
+
+      - name: Lighthouse report
+        continue-on-error: true
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=.lighthouserc.json
+
+      - name: Keep the Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: lighthouse-report
+          path: .lighthouseci
+          if-no-files-found: ignore
+          retention-days: 14
+
+  deploy:
+    name: Publish
+    needs: check
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7.0.1
+
+      - name: Read the Pages settings
+        id: pages
+        uses: actions/configure-pages@v6.0.0
+
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html 404.html manifest.json sw.js robots.txt firebase-config.js css js fonts icons _site/
+          # Missing-page links need the site's base path (for example /wa-greetings/).
+          sed -i "s|__BASE__|${{ steps.pages.outputs.base_path }}/|" _site/404.html
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: _site
+
+      - name: Publish to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.1
