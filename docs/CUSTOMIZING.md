@@ -23,13 +23,15 @@ File: `js/messages.js`
 
 | What | Where in the file |
 | --- | --- |
-| Opening phrases (`Good {timeOfDay}.`) | `OPENERS` |
+| Opening phrases (`Good {tod}! {wish}.`) | `OPENERS` |
+| Prayers for morning, afternoon and evening | `TIME_PRAYERS` |
+| "Amen" lines and time-of-day well-wishes | `AMENS`, `WELL_WISHES` |
 | Closing emoji | `CLOSERS` |
-| Weekday lines and verses | `THEMES`, numbered 0 (Sunday) to 6 (Saturday) |
-| "New month" lines and verses | `NEW_MONTH_THEME` (use `{month}` for the month name) |
+| Weekday reflections and prayers | `THEMES`, numbered 0 (Sunday) to 6 (Saturday) |
+| "New month" reflections and prayers | `NEW_MONTH_THEME` (use `{month}` for the month name) |
 | Theme names shown on screen | `THEME_NAMES` |
 
-`{timeOfDay}` becomes morning, afternoon or evening. Keep every entry inside quotes and followed by a comma. Adding more entries to any list makes the messages more varied.
+`{tod}` becomes morning, afternoon or evening, and `{wish}` becomes the day's greeting (for example "Happy Friday"). Keep every entry inside quotes and followed by a comma. Adding more entries to any list makes the messages more varied.
 
 ## How many contacts show at once
 

@@ -4,7 +4,7 @@
 
 <h1 align="center">Daily Greetings</h1>
 
-<p align="center">Themed WhatsApp greetings with a Bible verse, ready to send in one tap.</p>
+<p align="center">Themed, prayerful WhatsApp greetings with a Nigerian touch, ready to send in one tap.</p>
 
 <p align="center">
   <a href="https://github.com/babatundeawo/wa-greetings/actions/workflows/deploy.yml"><img src="https://github.com/babatundeawo/wa-greetings/actions/workflows/deploy.yml/badge.svg" alt="Deploy status"></a>
@@ -23,7 +23,7 @@
 
 ## About
 
-Daily Greetings is a private, installable web app for sending warm, prayer-style WhatsApp greetings to the people in your contact list. Each message is built for the day of the week, includes a King James Bible verse, and never uses the recipient's name, so it reads well whether they are older, younger or someone you barely know. It exists to make a steady habit of staying in touch quick and respectful. The app sits behind a sign-in, and contacts are kept in a private database.
+Daily Greetings is a private, installable web app for sending warm, prayer-style WhatsApp greetings to the people in your contact list. Each message is built for the day of the week, carries a short reflection and a prayer written from a Nigerian point of view, and never uses the recipient's name, so it reads well whether they are older, younger or someone you barely know. It exists to make a steady habit of staying in touch quick and respectful. The app sits behind a sign-in, and contacts are kept in a private database.
 
 ## Features
 
@@ -78,6 +78,5 @@ Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).
 ## Credits
 
 - Fonts: [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) and [Instrument Sans](https://github.com/Instrument/instrument-sans), both under the SIL Open Font License 1.1 (license files are in `fonts/`).
-- Scripture quotations are from the King James Version, which is in the public domain.
 
 Guides for running the site: [Deployment](docs/DEPLOYMENT.md) · [Customizing](docs/CUSTOMIZING.md) · [Firebase login setup](docs/FIREBASE_LOGIN_SETUP.md)

@@ -1,7 +1,7 @@
 {
   "name": "Daily Greetings",
   "short_name": "Greetings",
-  "description": "Themed WhatsApp greetings with a Bible verse, ready to send in one tap.",
+  "description": "Themed, prayerful WhatsApp greetings with a Nigerian touch, ready to send in one tap.",
   "lang": "en",
   "start_url": "./index.html",
   "id": "./index.html",
