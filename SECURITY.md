@@ -1,11 +1,15 @@
 # Security
 
-## Reporting a vulnerability
+This is a private, single-owner app. If you find a problem, please contact the owner directly instead of opening a public issue.
 
-Please report security problems privately. On the repository page, open the **Security** tab and choose **Report a vulnerability**. Do not post details in a public issue.
+## How the app protects contacts
 
-## What is public and what is not
+- Contacts are stored only in Firebase Cloud Firestore. Rules allow one user ID and refuse everyone else.
+- Sign-in and the database cache are held in memory only. Nothing about your contacts is written to the device.
+- A strict Content Security Policy limits where scripts, styles and connections can come from.
+- Optional Firebase App Check (reCAPTCHA) blocks requests that do not come from this site.
+- No contact files are accepted in the repository: the build stops if one is committed.
 
-- The values in `firebase-config.js` identify the Firebase project. They are designed to be public and are not passwords.
-- Contacts and sent status are stored in a private Firestore database. The rules in `firestore.rules` allow access to signed-in users only.
-- Contact lists, exports and service-account keys must never be committed to this repository. The deploy workflow stops if it finds contact files.
+## Keys in this repository
+
+The Firebase settings (API key, project ID, app ID) are supplied to the build as GitHub secrets and are not stored in the code. They identify your project and are not passwords, but treat the API key as rotatable: restrict it to your site address in Google Cloud Console (see `docs/FIREBASE_SETUP.md`).

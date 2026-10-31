@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com; manifest-src 'self'; worker-src 'self'; form-action 'self'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="%%CSP%%">
 <meta name="referrer" content="no-referrer">
 <title>Daily Greetings</title>
 <meta name="description" content="A private WhatsApp greeting assistant: themed, prayerful messages for the day and time, ready to send in one tap.">
@@ -11,15 +11,18 @@
 <meta name="theme-color" content="#f4f5fb" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0c0e22" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
-<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Greetings">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script src="js/theme-init.js"></script>
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/app.css">
+%%PRELOAD%%
+<script src="theme-init.js"></script>
+<link rel="stylesheet" href="%%CSS%%">
 </head>
 <body>
 
@@ -33,9 +36,18 @@
   <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A9.7 9.7 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4M6.6 6.6C3.7 8.4 2 12 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4.4-1.1M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10 14M21 3l-7 18-4-7-7-4z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></symbol>
+  <symbol id="i-plus-square" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></symbol>
 </svg>
 
 <a class="skip-link" href="#list">Skip to contacts</a>
+
+<div id="updateBar" class="banner banner--action" role="status" hidden>
+  <span>A new version is ready.</span>
+  <button class="btn btn--small" id="updateBtn" type="button">Refresh</button>
+</div>
 
 <noscript>
   <section class="auth"><div class="auth__card">
@@ -69,6 +81,7 @@
       <p id="loginError" class="form-error" role="alert"></p>
       <button class="btn btn--block" id="loginSubmit" type="submit">Sign in</button>
     </form>
+    <p class="auth__note" id="authOffline" hidden>You are offline. Connect to the internet to sign in.</p>
   </div>
 </main>
 
@@ -100,16 +113,27 @@
   <div class="layout" id="layout">
     <aside class="panel" aria-label="Today and filters">
       <section class="today enter" aria-labelledby="todayDay">
-        <h2 class="today__day" id="todayDay"></h2>
-        <p class="today__theme" id="todayTheme"></p>
-        <div class="progress">
-          <div class="progress__bar" role="progressbar" id="progressBar" aria-label="Contacts greeted" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress__fill" id="progressFill"></span></div>
-          <p class="progress__text"><span id="progressSent"></span><span id="progressPending"></span></p>
+        <div class="sky" id="sky" data-band="morning" data-body="sun" aria-hidden="true">
+          <div class="sky__stars"></div>
+          <div class="sky__body" id="skyBody"></div>
+          <svg class="sky__hills" viewBox="0 0 320 60" preserveAspectRatio="none" focusable="false">
+            <path class="hill hill--back" d="M0 38C60 8 120 8 180 32S280 52 320 26V60H0z"/>
+            <path class="hill hill--front" d="M0 50C70 30 150 34 210 46S290 56 320 44V60H0z"/>
+          </svg>
+        </div>
+        <div class="today__body">
+          <p class="today__greeting" id="todayGreeting"></p>
+          <h2 class="today__day" id="todayDay"></h2>
+          <p class="today__theme" id="todayTheme"></p>
+          <div class="progress">
+            <div class="progress__bar" role="progressbar" id="progressBar" aria-label="Contacts greeted" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress__fill" id="progressFill"></span></div>
+            <p class="progress__text"><span id="progressSent"></span><span id="progressPending"></span></p>
+          </div>
         </div>
       </section>
 
       <div class="search enter">
-        <label class="sr-only" for="searchInput">Search by name</label>
+        <label class="sr-only" for="searchInput">Search by name (press / to jump here)</label>
         <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
         <input class="input" id="searchInput" type="search" placeholder="Search by name" autocomplete="off" enterkeyhint="search">
       </div>
@@ -117,6 +141,20 @@
       <div id="labelFilters" class="enter"></div>
 
       <div id="viewTabs" class="segmented enter" role="group" aria-label="Show contacts"></div>
+
+      <section id="installCard" class="install" aria-labelledby="installTitle" hidden>
+        <h2 class="install__title" id="installTitle">Keep it on your home screen</h2>
+        <p class="install__text" id="installText">Install Daily Greetings to open it like any other app.</p>
+        <ol class="install__steps" id="iosSteps" hidden>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-share"/></svg><span>Tap the <strong>Share</strong> button at the bottom of Safari.</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-plus-square"/></svg><span>Scroll down and tap <strong>Add to Home Screen</strong>.</span></li>
+          <li><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg><span>Tap <strong>Add</strong>. The app icon appears on your home screen.</span></li>
+        </ol>
+        <div class="install__actions">
+          <button class="btn" id="installBtn" type="button" hidden>Install app</button>
+          <button class="btn btn--ghost" id="installDismiss" type="button">Not now</button>
+        </div>
+      </section>
 
       <div class="panel__footer">
         <button class="text-btn" id="resetSentBtn" type="button">Reset sent status</button>
@@ -126,6 +164,10 @@
     <main id="list" class="list" tabindex="-1" aria-busy="true"></main>
   </div>
 
+  <button class="to-top" id="toTop" type="button" aria-label="Back to top" hidden>
+    <svg class="icon" aria-hidden="true"><use href="#i-arrow-up"/></svg>
+  </button>
+
   <div id="savebar" class="savebar" role="region" aria-label="Unsaved changes" hidden>
     <span class="savebar__text" id="savebarText"></span>
     <button class="btn btn--ghost" id="discardBtn" type="button">Discard</button>
@@ -133,7 +175,7 @@
   </div>
 </div>
 
-<div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+<div id="toasts" class="toasts" role="status" aria-live="polite" aria-label="Notifications"></div>
 
 <!-- Import contacts -->
 <dialog id="importDialog" class="dialog" aria-labelledby="importTitle">
@@ -171,10 +213,6 @@
   </div>
 </dialog>
 
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
-<script type="module" src="js/app.js"></script>
+<script type="module" src="%%JS%%"></script>
 </body>
 </html>

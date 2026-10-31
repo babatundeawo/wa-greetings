@@ -1,58 +1,25 @@
 # Customizing
 
-Everything here can be edited on github.com. Open the file, click the **pencil icon** (Edit this file), make the change, then click **Commit changes**. Changes on `main` publish automatically within a couple of minutes. To try a change first, choose **Create a new branch for this commit and start a pull request** instead.
+You can do all of this from the GitHub website: open a file, click the pencil icon, edit, then **Commit changes**. Wait about two minutes for the site to rebuild. After each change, open the site on your phone: you will see a **Refresh** bar. Tap it.
 
-After a change goes live, the app updates the next time you open it. If you still see the old version, close the app fully and open it again.
+## Change the greeting wording
 
-## Colors
+Open `src/messages.js`. Each weekday has a list of reflections and prayers. Add a new one by copying a line inside the same square brackets, changing the words between the quote marks, and keeping the comma at the end. Each line sits between double quote marks ("like this"). Do not type a double quote mark inside the words; apostrophes are fine.
 
-File: `css/tokens.css`
+Special words you can use inside a message: `{tod}` becomes morning, afternoon or evening; `{wish}` becomes the day's greeting (for example "Happy Monday"); `{month}` becomes the month name.
 
-- The light palette is at the top, inside `:root { ... }`. Change the hex codes (for example `--primary: #3a3fb8;`).
-- Dark theme colors are in two places: the `@media (prefers-color-scheme: dark)` block and the `:root[data-theme="dark"]` block. Keep both in step.
-- `--primary` is the main brand color, `--accent` is the marigold used sparingly, and `--send` is the green on the Send button.
-- Keep text readable: dark text on light backgrounds and the reverse. Test any new pair at webaim.org/resources/contrastchecker (aim for 4.5 or higher).
+## Change colours
 
-## Text on screen
+Open `src/styles/tokens.css`. The two main colours are `--primary` (indigo) and `--accent` (marigold), once in the light block at the top and once in each dark block further down. If you change a colour, change it in all three places and check that text is still easy to read.
 
-File: `index.html`. Search for the words you want to change (press **Ctrl+F** or **Cmd+F** in the editor). Only change the words between `>` and `<`, not the tags around them.
+## Change the name
 
-## The greetings
+Search for "Daily Greetings" in `src/index.html`, `src/404.html`, `src/offline.html` and `public/manifest.webmanifest`, and edit each one.
 
-File: `js/messages.js`
+## Stay signed in on your phone (optional)
 
-| What | Where in the file |
-| --- | --- |
-| Opening phrases (`Good {tod}! {wish}.`) | `OPENERS` |
-| Prayers for morning, afternoon and evening | `TIME_PRAYERS` |
-| "Amen" lines and time-of-day well-wishes | `AMENS`, `WELL_WISHES` |
-| Closing emoji | `CLOSERS` |
-| Weekday reflections and prayers | `THEMES`, numbered 0 (Sunday) to 6 (Saturday) |
-| "New month" reflections and prayers | `NEW_MONTH_THEME` (use `{month}` for the month name) |
-| Theme names shown on screen | `THEME_NAMES` |
+By design the app signs you out whenever it closes. To remember sign-in instead, open `src/firebase.js`, replace both `inMemoryPersistence` with `browserLocalPersistence`. Be aware that this stores a sign-in token on that device.
 
-`{tod}` becomes morning, afternoon or evening, and `{wish}` becomes the day's greeting (for example "Happy Friday"). Keep every entry inside quotes and followed by a comma. Adding more entries to any list makes the messages more varied.
+## Update your screenshots
 
-## How many contacts show at once
-
-File: `js/app.js`, near the top: `DEFAULT_VISIBLE` (starts at 20) and `LOAD_MORE_OPTIONS` (the "+10 more" style buttons).
-
-## Logo and icons
-
-Folder: `icons/`. Replace a file by opening the folder, choosing **Add file > Upload files**, and uploading a new file with **the same name**.
-
-| File | Size |
-| --- | --- |
-| `icon.svg` | Any size (vector logo, also the browser tab icon) |
-| `icon-192.png`, `icon-512.png` | 192 and 512 pixels square |
-| `icon-maskable-512.png` | 512 pixels square, with the logo inside the central 60% so phones can crop it |
-| `apple-touch-icon.png` | 180 pixels square, no transparent areas |
-| `favicon-32.png` | 32 pixels square |
-
-## Fonts
-
-Fonts are files in `fonts/` and are set up at the top of `css/tokens.css` (`@font-face`) and in `--font-display` and `--font-body`. To swap a font, upload a free-to-use `.woff2` file to `fonts/`, point `src: url(...)` at it, and keep the font's license file next to it. Update the credit in the README.
-
-## Spacing, corners and motion
-
-Also in `css/tokens.css`: `--space-*`, `--radius-*`, `--shadow-*` and the motion timings `--dur-*`. Animations switch off automatically for people who ask their device to reduce motion.
+Take new screenshots, name them `desktop.png` and `mobile.png`, and upload them into `public/screenshots/` (use made-up contacts). Keep the sizes written in `public/manifest.webmanifest` in step with the new images.

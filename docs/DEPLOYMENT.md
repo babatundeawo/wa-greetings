@@ -1,134 +1,70 @@
-# Deployment guide
+# Moving to this version (step by step)
 
-For the site owner. Everything here happens on github.com and console.firebase.google.com. You never need a terminal.
+This replaces the files in your existing `wa-greetings` repository with a rebuilt version. Your live address stays the same: `https://babatundeawo.github.io/wa-greetings/`. Allow about 40 minutes the first time. Nothing here needs a terminal.
 
-## How deployment works
+**Your contacts are safe.** They live in Firebase, not in these files. Replacing the files does not touch them.
 
-The site is a set of plain files on the `main` branch. Whenever something changes on `main`, a workflow called **Deploy site** checks the files and publishes them to GitHub Pages. This takes one to two minutes. Pull requests run the same checks but publish nothing, so the live site stays untouched until you merge.
+## Before you start
 
-## First-time move to the redesign
+You need your Firebase **web app settings**. Open [Firebase Console](https://console.firebase.google.com/), pick your project, click the gear icon, then **Project settings**. Scroll to **Your apps**. You will use four values later: `apiKey`, `authDomain`, `projectId` and `appId`. Keep this tab open.
 
-Do these in order. Use a computer: uploading folders is not practical from a phone.
+## Part 1: Put the new files in your repository
 
-### 1. Save your contacts file
+You will work in a normal folder on your computer. If you already have the repository cloned (for example with GitHub Desktop), use that folder. If not, in GitHub Desktop choose **File > Clone repository**, pick `babatundeawo/wa-greetings`, and click **Clone**.
 
-Your contacts will move into the private database, and the old files will be deleted. Keep a copy first.
+1. Open the cloned folder in File Explorer (Windows) or Finder (Mac). In GitHub Desktop: **Repository > Show in Explorer** or **Show in Finder**.
+2. **Show hidden files.** Windows: in File Explorer click **View > Show > Hidden items**. Mac: press `Cmd` + `Shift` + `.`.
+3. **Delete everything in the folder EXCEPT the folder called `.git`.** Select all, then hold `Ctrl` (Windows) or `Cmd` (Mac) and click `.git` to un-select it, then delete. Do not delete `.git`: it is the repository's history.
+4. Unzip `wa-greetings-rebuild.zip`. Open the unzipped `wa-greetings` folder, select **everything inside it** (including the hidden `.github` folder) and copy it into your repository folder.
+5. Open GitHub Desktop. You will see many changed files. Type the summary `Rebuild: new design, self-hosted Firebase, safer rules` and click **Commit to main**. **Do not push yet.**
 
-1. On github.com, open your repository, then the file `data/contacts.csv`.
-2. Click the download icon (**Download raw file**) at the top right of the file view.
-3. Save it somewhere only you can see. This is the file you will import in step 9.
+## Part 2: Add the secrets to GitHub
 
-### 2. Update the database rules in Firebase
+The site is built by GitHub, which needs your Firebase settings. They are stored as secrets so they are not in the code.
 
-1. Go to console.firebase.google.com and open your project.
-2. In the left menu choose **Build > Firestore Database**, then the **Rules** tab.
-3. Delete everything in the box, then paste the full contents of `firestore.rules` from the new files.
-4. Click **Publish**. You should see a confirmation and a new "Last published" time.
+1. On GitHub open your repository, click **Settings**.
+2. In the left menu click **Secrets and variables**, then **Actions**.
+3. Click **New repository secret**. Add these four, one at a time. The **Name** must match exactly, and the **Secret** is the value from Firebase's Project settings (no quote marks, no spaces):
 
-Your current live site keeps working, because the rules still allow the data it uses.
-
-### 3. Turn off public sign-up
-
-1. In the Firebase Console choose **Authentication** (under **Security** or **Build**, depending on your layout), then the **Settings** tab.
-2. Open **User actions**.
-3. Untick **Enable create (sign-up)** and click **Save**.
-
-Without this, anyone who finds your project's public key could create an account and read your contacts. Your own account keeps working.
-
-### 4. Upload the new files and open a pull request
-
-1. Unzip the delivered folder on your computer. If you cannot see a `.github` folder, show hidden files (Mac: **Cmd+Shift+.**, Windows: **View > Show > Hidden items**).
-2. On github.com open your repository. Choose **Add file > Upload files**.
-3. Drag in everything inside the unzipped folder, including the `.github` folder.
-4. At the bottom, choose **Create a new branch for this commit and start a pull request**. Name it `rebrand/premium-redesign`.
-5. Click **Propose changes**, then **Create pull request**.
-
-If the `.github` folder will not upload, open **Add file > Create new file**, type `.github/workflows/deploy.yml` as the name, paste the file's contents, and repeat for `codeql.yml` and `dependabot.yml`. Use the same branch.
-
-### 5. Delete the old files from the branch
-
-Uploading cannot delete files. Remove these from the branch, one at a time: open the branch from the branch menu, open the file, click the three dots, choose **Delete file**, then **Commit directly to the rebrand/premium-redesign branch**.
-
-`app.js`, `style.css`, `icon.svg`, `icon-180.png`, `icon-192.png`, `icon-512.png`, `contacts.json`, `pending.json`, `sent.json`, `ignored.json`, `data/contacts.csv`, `scripts/sync-contacts.js`, `package.json`, `.gitattributes`, `.github/workflows/sync-contacts.yml`
-
-The checks will fail with a clear message until the contact files are gone. That is intentional.
-
-### 6. Review
-
-1. Open the pull request and scroll to the checks at the bottom. Wait for green ticks.
-2. GitHub Pages cannot preview a pull request, so the page itself is not viewable until it is merged. The checks cover the code, links and accessibility. If anything looks wrong afterwards, step "Roll back" below undoes it in a minute.
-
-### 7. Merge
-
-Click **Merge pull request**, then **Confirm merge**.
-
-### 8. Switch Pages to the workflow
-
-1. Open **Settings > Pages**.
-2. Under **Build and deployment > Source**, choose **GitHub Actions**.
-3. Open the **Actions** tab, choose **Deploy site** on the left, then **Run workflow > Run workflow**.
-4. Wait for a green tick, then open your site address.
-
-### 9. Sign in and import
-
-1. Sign in with your usual email and password.
-2. Tap the upload icon at the top right and choose the CSV from step 1.
-3. Check the counts and tap **Import**. People already marked as sent stay marked.
-
-### 10. Privacy clean-up (important)
-
-The old contact files are removed from the current version, but **GitHub keeps every earlier version in the repository history**. If the repository is public, anyone could still read them there, and they may already have been readable at your site address.
-
-Pick one:
-
-- **Best: start a clean repository.** Download a backup of the new files, delete the old repository (**Settings > Danger Zone > Delete this repository**), create a new one with the same name, and upload the new files. History starts fresh. Then repeat steps 8 and 9. Do this only after step 9 has worked.
-- **Or make the repository private.** **Settings > General > Danger Zone > Change visibility**. GitHub Pages from a private repository needs a paid GitHub plan. History is still not erased.
-
-Whichever you choose, treat the old phone numbers as having been exposed. Nothing in the new version stores contacts in the repository, and the deploy workflow refuses to run if contact files reappear.
-
-## Everyday use
-
-- **New contacts:** export from Google Contacts as CSV and use the upload icon in the app. Never upload contacts to GitHub.
-- **Wording, colors, icons:** see [CUSTOMIZING.md](CUSTOMIZING.md).
-
-## Check that a deployment worked
-
-1. Open the **Actions** tab on your repository.
-2. Find the newest **Deploy site** run. A green tick means published, a red cross means it failed, a yellow dot means it is still running.
-3. Click the run, then **Publish**. The site address appears there.
-
-## Reading an error
-
-Click the failed run, then the red step. The last lines say what went wrong.
-
-| Message | Fix |
+| Name | Value from Firebase |
 | --- | --- |
-| Contact data found in the repository | Delete the listed files (step 5 above). |
-| Get Pages site failed / Pages not enabled | **Settings > Pages > Source > GitHub Actions** (step 8). |
-| Branch is not allowed to deploy to github-pages | **Settings > Environments > github-pages > Deployment branches**: allow `main`. |
-| Syntax error in a `.js` file | You edited a file and left out a quote, comma or bracket. Open the file, undo your last edit, and try again. |
+| `FIREBASE_API_KEY` | `apiKey` (use the **new** key from [FIREBASE_SETUP.md](FIREBASE_SETUP.md), Part 1) |
+| `FIREBASE_AUTH_DOMAIN` | `authDomain` |
+| `FIREBASE_PROJECT_ID` | `projectId` |
+| `FIREBASE_APP_ID` | `appId` |
 
-Link and Lighthouse steps only report problems; they never block publishing. Lighthouse reports are saved on the run page under **Artifacts**.
+4. Later, when you set up App Check, you will add a fifth, `RECAPTCHA_SITE_KEY`. It is optional for now.
 
-## Roll back
+## Part 3: Make Pages use GitHub Actions
 
-- **Quickest:** on the **Actions** tab, open an older run with a green tick, then **Re-run all jobs**. That version goes live again.
-- **Undo a pull request:** open **Pull requests > Closed**, open the one to undo, click **Revert**, then merge the new pull request it creates.
+1. Repository **Settings > Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**. (If it already says that, leave it.)
 
-## Connect a custom domain
+## Part 4: Do the Firebase steps BEFORE you push
 
-1. **Settings > Pages > Custom domain**, type your domain, **Save**.
-2. At your domain registrar, add DNS records. For a bare domain (example.com) add four `A` records pointing to `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`. For `www`, add a `CNAME` pointing to `babatundeawo.github.io`.
-3. When GitHub shows the check as done, tick **Enforce HTTPS**.
-4. In the Firebase Console go to **Authentication > Settings > Authorized domains > Add domain** and add the new domain, or sign-in will fail.
+Follow [FIREBASE_SETUP.md](FIREBASE_SETUP.md) Parts 1 to 3 now: restrict the key, find your user ID and publish the new rules. Publishing the rules is what makes the database safe, and the app will not read your contacts until your user ID is in them.
 
-## Turn on automatic secret scanning
+## Part 5: Publish
 
-1. **Settings > Code security** (named **Advanced Security** on some accounts).
-2. Enable **Secret scanning** and **Push protection** where offered.
+1. In GitHub Desktop click **Push origin**.
+2. On GitHub open the **Actions** tab. Click the newest run called **Deploy site**. Wait for the green ticks (about 2 to 3 minutes).
+   - If **Build the site** is red and says a secret is missing, redo Part 2.
+3. Open `https://babatundeawo.github.io/wa-greetings/` and sign in.
+4. If your phone has the old app installed, open it once. A **Refresh** bar appears. Tap it.
 
-This warns you if a password or key is ever committed by mistake.
+## Part 6: Clean old contact data out of the history (strongly recommended)
 
-## About security headers
+Older versions kept contact files in this repository. Deleting them does not remove them from the history, and the repository must be public for free Pages. Check: on GitHub open **Code**, click the commit count (for example "123 commits"), and look for old commits that touch files named `contacts`, `pending`, `sent` or `data/`. If you find any, the simplest safe fix is:
 
-GitHub Pages cannot send custom response headers. The app uses a strict Content Security Policy through a page tag instead. Protection against being embedded in other sites (frame-ancestors) is the one thing a tag cannot do. If that matters to you, host on Firebase Hosting, which can set headers.
+1. Download your contacts first: you can re-import them later from Google Contacts.
+2. Repository **Settings**, scroll to the bottom, **Danger Zone**, **Delete this repository**. Type the name to confirm.
+3. Create a new **public** repository called `wa-greetings` (same name, so the address is unchanged), then repeat Parts 1 to 5 with it. Clone the new empty repository for Part 1, and skip step 3 of Part 1.
+
+Do this only after the new site works elsewhere or you have your files backed up. If you prefer to keep the history, tell me and I will write a history-rewriting guide instead. It is more delicate.
+
+## If something goes wrong
+
+- **Actions run is red:** click it, click the red step, and read the first message. Missing secrets are named in plain words.
+- **Sign-in says "address is not authorised":** Firebase Console > Authentication > Settings > Authorized domains, add `babatundeawo.github.io`.
+- **Sign-in works but contacts do not load:** your user ID in the rules is wrong or not published. Redo [FIREBASE_SETUP.md](FIREBASE_SETUP.md) Part 3.
+- **Site shows the old design:** open the site, wait 10 seconds, and tap **Refresh** if the bar appears.

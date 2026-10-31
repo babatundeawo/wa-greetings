@@ -1,82 +1,52 @@
-<p align="center">
-  <img src="icons/icon.svg" width="88" height="88" alt="Daily Greetings logo: a speech bubble with a rising sun">
-</p>
+# Daily Greetings
 
-<h1 align="center">Daily Greetings</h1>
+A private WhatsApp greeting assistant. Each day it writes warm, prayerful messages that fit the day of the week and the time of day. You review a message, tap one button, and WhatsApp opens ready to send. It keeps track of who you have already greeted.
 
-<p align="center">Themed, prayerful WhatsApp greetings with a Nigerian touch, ready to send in one tap.</p>
+**Live site:** https://babatundeawo.github.io/wa-greetings/ (sign-in required)
 
-<p align="center">
-  <a href="https://github.com/babatundeawo/wa-greetings/actions/workflows/deploy.yml"><img src="https://github.com/babatundeawo/wa-greetings/actions/workflows/deploy.yml/badge.svg" alt="Deploy status"></a>
-  <a href="https://github.com/babatundeawo/wa-greetings/actions/workflows/codeql.yml"><img src="https://github.com/babatundeawo/wa-greetings/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security scan status"></a>
-</p>
+![Today's sky, progress and contact list on desktop](public/screenshots/desktop.png)
 
-<p align="center">
-  <a href="https://babatundeawo.github.io/wa-greetings/">Live site</a> ·
-  <a href="docs/DEPLOYMENT.md">Documentation</a> ·
-  <a href="https://github.com/babatundeawo/wa-greetings/issues">Report an issue</a>
-</p>
+<img src="public/screenshots/mobile.png" alt="The same screen on a phone, in dark theme at night" width="260">
 
-<p align="center">
-  <img src="docs/assets/preview-desktop.webp" width="720" alt="Daily Greetings on a desktop screen: today's theme and progress on the left, contact cards with an editable message and a Send on WhatsApp button on the right">
-</p>
+*Screenshots use made-up names and numbers.*
 
-## About
+## What it does
 
-Daily Greetings is a private, installable web app for sending warm, prayer-style WhatsApp greetings to the people in your contact list. Each message is built for the day of the week, carries a short reflection and a prayer written from a Nigerian point of view, and never uses the recipient's name, so it reads well whether they are older, younger or someone you barely know. It exists to make a steady habit of staying in touch quick and respectful. The app sits behind a sign-in, and contacts are kept in a private database.
+- Writes a different message for every contact and every day, in plain Nigerian-friendly English, with a theme for each weekday and for the first of the month.
+- Matches the wording to the time of day. The sky above today's date does too: its colours and the sun or moon follow the real hour.
+- Sends through WhatsApp click-to-chat. You can edit any message first, or copy it.
+- Tracks who has been greeted, with Pending, Sent and All views, label filters, search, and one-tap reset.
+- Imports a Google Contacts CSV and shows what will change before saving.
+- Works as an installable app on Android, desktop and iPhone, with a calm update prompt.
+- Light and dark themes, keyboard friendly (press `/` to search), accessible, and fast on a phone.
 
-## Features
+## Privacy
 
-- Messages themed by weekday, with a "new month" prayer on the 1st. No two people get the same wording on the same day.
-- Edit any message before sending. The WhatsApp link updates as you type.
-- One tap opens WhatsApp with the chat and message ready, and marks the person as sent.
-- Extra phone numbers for a person appear as alternate links, so a missed number is easy to retry.
-- Pending, Sent and All views with live counts, a progress bar, name search and label filters.
-- Import a Google Contacts export from inside the app. People already marked as sent stay marked.
-- Light and dark themes. Installs to a phone or desktop home screen.
+- Your contacts live only in your private Firebase database. They are **never** in this repository.
+- Only the owner's account can read or write them. The database rules check your user ID.
+- Contacts are not stored on the device. Signing out or closing the app clears everything.
+- The site asks search engines not to list it, and loads no third-party scripts or fonts except Firebase's own services (and Google reCAPTCHA if you switch on App Check).
 
-## How to use it
+## How it is built
 
-1. Open the [live site](https://babatundeawo.github.io/wa-greetings/) and sign in.
-2. On first use, tap the upload icon and choose your Google Contacts CSV export.
-3. Pick **Pending**, search for a name, or filter by label.
-4. Read or edit the message, then tap **Send on WhatsApp**. Send it in WhatsApp and come back.
-5. Use the **Sent** switch and **Save changes** to correct any mistakes.
+Plain HTML, CSS and JavaScript, bundled by [esbuild](https://esbuild.github.io/) inside GitHub Actions. Hosted free on GitHub Pages. Sign-in and data use Firebase Authentication and Cloud Firestore on the free Spark plan. There is no server of your own to run.
 
-<p align="center">
-  <img src="docs/assets/preview-mobile-dark.webp" width="300" alt="Daily Greetings on a phone in dark theme, showing a contact card with a greeting and a green Send on WhatsApp button">
-</p>
+| Folder or file | Purpose |
+| --- | --- |
+| `src/` | The app: page templates, `main.js`, the message writer (`messages.js`), the importer, the service worker |
+| `src/styles/` | Design tokens and styles |
+| `public/` | Files copied as they are: icons, manifest, screenshots, font licences |
+| `scripts/` | `build.mjs` builds the site; `verify.mjs` checks the result |
+| `firestore.rules` | The database rules you paste into Firebase |
+| `docs/` | Step-by-step guides |
+| `.github/workflows/` | Build, checks and publishing |
 
-## Tech stack
+## Guides
 
-- Plain HTML, CSS and JavaScript modules. There is no build step.
-- Firebase Authentication and Cloud Firestore.
-- GitHub Pages, deployed by GitHub Actions.
-- Bricolage Grotesque and Instrument Sans, self-hosted.
-
-## Project structure
-
-```text
-index.html          App shell and sign-in screen
-404.html            Page-not-found screen
-manifest.json       Install (PWA) settings
-sw.js               Service worker for fast, offline-friendly loading
-firebase-config.js  Public Firebase project identifiers
-firestore.rules     Database access rules
-css/                Design tokens and component styles
-js/                 App logic, greeting engine, contact importer
-fonts/              Self-hosted fonts and their licenses
-icons/              Logo and app icons
-docs/               Guides for running the site
-.github/            Deployment, security scan and dependency update workflows
-```
-
-## Security
-
-Report vulnerabilities privately, as described in [SECURITY.md](SECURITY.md).
+- [First-time setup and moving to this version](docs/DEPLOYMENT.md)
+- [Firebase setup, rules, secrets and App Check](docs/FIREBASE_SETUP.md)
+- [Changing messages, colours and wording](docs/CUSTOMIZING.md)
 
 ## Credits
 
-- Fonts: [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) and [Instrument Sans](https://github.com/Instrument/instrument-sans), both under the SIL Open Font License 1.1 (license files are in `fonts/`).
-
-Guides for running the site: [Deployment](docs/DEPLOYMENT.md) · [Customizing](docs/CUSTOMIZING.md) · [Firebase login setup](docs/FIREBASE_LOGIN_SETUP.md)
+Fonts: [Bricolage Grotesque](https://github.com/ateliertriay/bricolage) and [Instrument Sans](https://github.com/Instrument/instrument-sans), both under the SIL Open Font License (see `public/licenses/`). No licence has been chosen for the code; all rights reserved by the owner.

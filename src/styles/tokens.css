@@ -40,6 +40,7 @@
   --accent: #f2a41f;
   --accent-tint: #fdf0d5;
   --on-accent: #3a2600;
+  --on-accent-solid: #3a2600; /* text on a solid marigold fill, in both themes */
 
   --send: #0b7a55;
   --send-hover: #096a49;
@@ -49,7 +50,7 @@
   --sent-line: #bfe3cf;
   --bubble: #eef0fb;
 
-  --success: #1b7f55;
+  --success: #146c47;
   --success-tint: #e1f4ea;
   --warning: #8a5a00;
   --warning-tint: #fdf0d5;

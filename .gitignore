@@ -7,6 +7,8 @@ ignored.json
 *.vcf
 serviceAccountKey*.json
 *-service-account*.json
+.env
+.env.*
 
 # Build and tooling output
 _site/

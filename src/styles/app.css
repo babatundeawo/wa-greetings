@@ -37,7 +37,7 @@ button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 
-::selection { background: var(--accent); color: var(--on-accent); }
+::selection { background: var(--accent); color: var(--on-accent-solid); }
 
 :focus-visible {
   outline: 3px solid var(--focus);
@@ -256,14 +256,7 @@ button { cursor: pointer; }
   .panel { position: sticky; top: 5rem; max-height: calc(100dvh - 6rem); overflow-y: auto; padding: 2px; padding-bottom: var(--space-4); }
 }
 
-/* ----------------------------------------------------------- Day banner */
-.today { display: grid; gap: var(--space-3); }
-.today__day {
-  font-size: var(--step-3);
-  font-weight: 700;
-}
-.today__theme { color: var(--text-muted); margin-top: calc(var(--space-1) * -1); }
-.today__theme strong { color: var(--text); font-weight: 600; }
+/* ----------------------------------------------------------- Day banner: see extras.css */
 
 .progress { display: grid; gap: var(--space-2); }
 .progress__bar {
@@ -454,7 +447,7 @@ button { cursor: pointer; }
   animation: rise var(--dur) var(--ease);
 }
 .savebar__text { flex: 1; font-weight: 600; font-variant-numeric: tabular-nums; }
-.savebar .btn { background: var(--accent); color: var(--on-accent); }
+.savebar .btn { background: var(--accent); color: var(--on-accent-solid); }
 .savebar .btn--ghost { background: transparent; color: var(--bg); border-color: color-mix(in srgb, var(--bg) 40%, transparent); }
 
 .toasts {
@@ -526,6 +519,6 @@ button { cursor: pointer; }
 }
 
 @media print {
-  .topbar, .savebar, .toasts, .panel { display: none !important; }
+  .topbar, .savebar, .toasts, .panel, .to-top, .banner, .install { display: none !important; }
   body { background: #fff; color: #000; }
 }

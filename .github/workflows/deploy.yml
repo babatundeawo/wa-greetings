@@ -1,6 +1,7 @@
 # Builds, checks and publishes the site to GitHub Pages.
-#   - Pull requests: run the checks only. Nothing is published.
-#   - Pushes to main (and the "Run workflow" button): run the checks, then publish.
+#   - Pull requests: build and check only. Nothing is published. The built site is attached
+#     to the run as a download so you can inspect it.
+#   - Pushes to main (and the "Run workflow" button): build, check, then publish.
 name: Deploy site
 
 on:
@@ -31,7 +32,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7.1.0
         with:
-          node-version: 22
+          node-version: 24
 
       # A hard stop: contact lists must live in the private database, never in this repository.
       - name: Make sure no contact data is committed
@@ -43,22 +44,22 @@ jobs:
             exit 1
           fi
 
+      - name: Install the build tools
+        run: npm install --no-audit --no-fund
+
       - name: Check JavaScript syntax
         run: |
-          for f in js/*.js sw.js firebase-config.js; do
-            node --check "$f" && echo "ok  $f"
+          for f in src/*.js scripts/*.mjs; do
+            cp "$f" /tmp/syntax-check.mjs
+            node --check /tmp/syntax-check.mjs && echo "ok  $f"
           done
 
-      - name: Check JSON files
-        run: |
-          node -e "for (const f of ['manifest.json']) { JSON.parse(require('fs').readFileSync(f, 'utf8')); console.log('ok  ' + f); }"
+      # Pull-request and check builds use placeholder Firebase settings and are never published.
+      - name: Build the site (check copy)
+        run: node scripts/build.mjs --allow-missing-config
 
-      - name: Assemble the site
-        run: |
-          mkdir _site
-          cp -r index.html 404.html manifest.json sw.js robots.txt firebase-config.js css js fonts icons _site/
-          # The 404 page needs a base path. Real deployments set it properly; here "/" is enough to check links.
-          sed -i 's|__BASE__|/|' _site/404.html
+      - name: Check the built site
+        run: node scripts/verify.mjs
 
       # Reports problems without failing the run, so a flaky link never blocks a deployment.
       - name: Check links
@@ -81,6 +82,14 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      - name: Keep the built site for inspection (pull requests)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: site-preview
+          path: _site
+          retention-days: 7
+
   deploy:
     name: Publish
     needs: check
@@ -97,16 +106,31 @@ jobs:
       - name: Get the code
         uses: actions/checkout@v7.0.1
 
+      - name: Set up Node
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+
       - name: Read the Pages settings
         id: pages
         uses: actions/configure-pages@v6.0.0
 
-      - name: Assemble the site
-        run: |
-          mkdir _site
-          cp -r index.html 404.html manifest.json sw.js robots.txt firebase-config.js css js fonts icons _site/
-          # Missing-page links need the site's base path (for example /wa-greetings/).
-          sed -i "s|__BASE__|${{ steps.pages.outputs.base_path }}/|" _site/404.html
+      - name: Install the build tools
+        run: npm install --no-audit --no-fund
+
+      # Fails with a plain-English message if a required secret is missing.
+      - name: Build the site
+        run: node scripts/build.mjs
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          RECAPTCHA_SITE_KEY: ${{ secrets.RECAPTCHA_SITE_KEY }}
+
+      - name: Check the built site
+        run: node scripts/verify.mjs --production
 
       - name: Upload the site
         uses: actions/upload-pages-artifact@v5.0.0

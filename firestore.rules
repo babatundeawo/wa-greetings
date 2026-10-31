@@ -2,18 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Which contacts have been greeted. Signed-in users only.
-    // This app has no sign-up page; the one account is created in the
-    // Firebase Console, and public sign-up is switched off there too
-    // (see docs/FIREBASE_LOGIN_SETUP.md).
-    match /rotation/{document=**} {
-      allow read, write: if request.auth != null;
+    // ONE person may use this database: the owner.
+    // Replace PASTE_YOUR_USER_ID_HERE with your Firebase user ID (the "User UID" shown in
+    // Firebase Console > Authentication > Users). Steps: docs/FIREBASE_SETUP.md.
+    // Even if someone else signs in, every request from them is refused.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.uid == 'PASTE_YOUR_USER_ID_HERE';
     }
 
-    // The contact list, split into documents (part-001, part-002, ...).
-    // Signed-in users only. Nothing here is ever served as a public file.
+    // Which contacts have been greeted.
+    match /rotation/state {
+      allow read: if isOwner();
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['sentPhones', 'ignoredPhones'])
+        && request.resource.data.sentPhones is list
+        && request.resource.data.sentPhones.size() <= 20000;
+      allow delete: if false;
+    }
+
+    // The contact list, split into documents part-001, part-002, ...
     match /contactBook/{part} {
-      allow read, write: if request.auth != null;
+      allow read: if isOwner();
+      allow create, update: if isOwner()
+        && part.matches('part-[0-9]{3}')
+        && request.resource.data.keys().hasOnly(['index', 'list', 'updatedAt'])
+        && request.resource.data.index is int
+        && request.resource.data.list is list
+        && request.resource.data.list.size() <= 1000
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner();
     }
 
     // Everything else is closed.
