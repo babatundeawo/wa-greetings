@@ -10,7 +10,7 @@
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
-    "firebase": "12.11.0"
+    "firebase": "13.1.0"
   },
   "devDependencies": {
     "esbuild": "0.25.9"
