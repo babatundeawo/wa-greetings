@@ -2,26 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ONE person may use this database: the owner.
-    // Replace PASTE_YOUR_USER_ID_HERE with your Firebase user ID (the "User UID" shown in
-    // Firebase Console > Authentication > Users). Steps: docs/FIREBASE_SETUP.md.
-    // Even if someone else signs in, every request from them is refused.
     function isOwner() {
       return request.auth != null
         && request.auth.uid == 'ASOjQ5C0tBYSO1FciYRhT8KFqvB2';
     }
 
-    // Which contacts have been greeted.
     match /rotation/state {
       allow read: if isOwner();
       allow create, update: if isOwner()
-        && request.resource.data.keys().hasOnly(['sentPhones', 'ignoredPhones'])
         && request.resource.data.sentPhones is list
         && request.resource.data.sentPhones.size() <= 20000;
       allow delete: if false;
     }
 
-    // The contact list, split into documents part-001, part-002, ...
     match /contactBook/{part} {
       allow read: if isOwner();
       allow create, update: if isOwner()
@@ -34,7 +27,6 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
-    // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;
     }
