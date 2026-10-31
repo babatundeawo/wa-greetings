@@ -8,7 +8,7 @@ service cloud.firestore {
     // Even if someone else signs in, every request from them is refused.
     function isOwner() {
       return request.auth != null
-        && request.auth.uid == 'PASTE_YOUR_USER_ID_HERE';
+        && request.auth.uid == 'ASOjQ5C0tBYSO1FciYRhT8KFqvB2';
     }
 
     // Which contacts have been greeted.
