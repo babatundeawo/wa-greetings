@@ -1,6 +1,6 @@
 # Daily Greetings
 
-A private WhatsApp greeting assistant. Each day it writes warm, prayerful messages that fit the day of the week and the time of day. You review a message, tap one button, and WhatsApp opens ready to send. It keeps track of who you have already greeted.
+A private WhatsApp greeting assistant. Each day it writes warm, prayerful messages that fit the day of the week and the time of day. You tap one button and WhatsApp opens ready to send, without having to read the message first (open Preview if you want to read or edit it). It keeps track of who you have already greeted.
 
 **Live site:** https://babatundeawo.github.io/wa-greetings/ (sign-in required)
 
@@ -12,9 +12,10 @@ A private WhatsApp greeting assistant. Each day it writes warm, prayerful messag
 
 ## What it does
 
-- Writes a different message for every contact and every day, in plain Nigerian-friendly English, with a theme for each weekday and for the first of the month.
-- Matches the wording to the time of day. The sky above today's date does too: its colours and the sun or moon follow the real hour.
-- Sends through WhatsApp click-to-chat. You can edit any message first, or copy it.
+- Writes a different message for every contact and every day, in plain Nigerian-friendly English. Messages are assembled from many pieces in five different shapes (long, short, reflective, double prayer and brief), which gives millions of distinct messages.
+- Has a theme for each weekday, for the first of the month, and for special days: Good Friday, Easter, New Year, Christmas Eve, Christmas, Boxing Day, the last day of the year, Independence Day, Workers' Day and Democracy Day.
+- Matches the wording to the time of day and, now and then, to the season (harmattan, heat, rains). The sky above today's date follows the real hour too.
+- Sends through WhatsApp click-to-chat in one tap. Each card stays compact: the message is folded away, and the eye button opens it to preview or edit. You can also copy it.
 - Tracks who has been greeted, with Pending, Sent and All views, label filters, search, and one-tap reset.
 - Imports a Google Contacts CSV and shows what will change before saving.
 - Works as an installable app on Android, desktop and iPhone, with a calm update prompt.

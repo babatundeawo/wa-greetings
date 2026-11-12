@@ -331,6 +331,7 @@ function stateBlock(title, text, action) {
 }
 
 function autosize(textarea) {
+  if (!textarea.offsetParent) return; // hidden: sized when it is opened
   textarea.style.height = 'auto';
   textarea.style.height = `${textarea.scrollHeight + 2}px`;
 }
@@ -340,7 +341,7 @@ async function copyText(text) {
     await navigator.clipboard.writeText(text);
     toast('Message copied', 'success', 2400);
   } catch (e) {
-    toast('Could not copy. Press and hold the message to select and copy it.', 'error', 5000);
+    toast('Could not copy. Open Preview, then press and hold the message to select and copy it.', 'error', 5000);
   }
 }
 
@@ -355,13 +356,28 @@ function renderCard(contact, now, index) {
   const toggle = h('input', { type: 'checkbox', class: 'switch__input' });
   toggle.checked = checked;
 
+  // The message is written for every card but stays folded away. You can send
+  // without reading it, or open Preview to read and edit it first.
+  const bubbleId = `msg-${contact.phone}`;
   const textarea = h('textarea', { class: 'bubble__text', rows: '3', 'aria-label': `Message for ${contact.name}`, spellcheck: 'true' });
   textarea.value = message;
+  const bubble = h('div', { class: 'bubble', id: bubbleId, hidden: true }, textarea);
 
   const send = h('a', {
     class: 'btn btn--send', target: '_blank', rel: 'noopener noreferrer',
     href: waLink(contact.phone, message),
   }, icon('send'), 'Send on WhatsApp');
+
+  const preview = h('button', {
+    type: 'button', class: 'icon-btn icon-btn--outline', 'aria-expanded': 'false', 'aria-controls': bubbleId,
+    'aria-label': `Preview or edit message for ${contact.name}`, title: 'Preview or edit message',
+  }, icon('eye'));
+  preview.addEventListener('click', () => {
+    const open = bubble.hidden;
+    bubble.hidden = !open;
+    preview.setAttribute('aria-expanded', String(open));
+    if (open) { autosize(textarea); textarea.focus({ preventScroll: true }); }
+  });
 
   const copy = h('button', {
     type: 'button', class: 'icon-btn icon-btn--outline', 'aria-label': `Copy message for ${contact.name}`, title: 'Copy message',
@@ -423,8 +439,8 @@ function renderCard(contact, now, index) {
         h('p', { class: 'card__phone', text: `+${contact.phone}` }),
         labels),
       h('label', { class: 'switch' }, toggle, h('span', { class: 'switch__track' }), h('span', { class: 'switch__text', text: 'Sent' }))),
-    h('div', { class: 'bubble' }, textarea),
-    h('div', { class: 'card__actions' }, send, copy),
+    h('div', { class: 'card__actions' }, send, preview, copy),
+    bubble,
     altNumbers.length
       ? h('div', { class: 'alt' }, h('span', { text: `Other number${altNumbers.length > 1 ? 's' : ''}:` }), altLinks)
       : '',
@@ -478,7 +494,6 @@ function renderList() {
   }
 
   el.list.replaceChildren(...nodes);
-  requestAnimationFrame(() => el.list.querySelectorAll('.bubble__text').forEach(autosize));
   firstRender = false;
 }
 
@@ -727,7 +742,7 @@ addEventListener('scroll', () => {
   el.toTop.hidden = scrollY < 900;
 }, { passive: true });
 
-// Keep message boxes sized to their text when the width changes.
+// Keep any open message boxes sized to their text when the width changes.
 let resizeTimer = null;
 addEventListener('resize', () => {
   clearTimeout(resizeTimer);
