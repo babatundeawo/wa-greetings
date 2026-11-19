@@ -97,7 +97,6 @@
 .icon-btn--outline { border-color: var(--line-strong); color: var(--text); background: var(--surface); }
 .icon-btn--outline:hover { background: var(--surface-2); }
 
-.card { transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease); }
 @media (hover: hover) { .card:hover { transform: translateY(-1px); } }
 
 .banner--action { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-3); background: var(--info-tint); color: var(--text); }
@@ -141,9 +140,13 @@
 }
 .to-top:hover { background: var(--surface-2); }
 
-/* Standalone (installed) polish */
+/* Installed (standalone) polish.
+ * Overscroll is set on the root, the element that actually scrolls the page. It must never go
+ * on body: with overflow also set on html and body, that combination is what stopped touch
+ * scrolling in the installed app. */
 @media (display-mode: standalone) {
-  body { overscroll-behavior-y: none; -webkit-user-select: none; user-select: none; }
+  html { overscroll-behavior-y: contain; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   textarea, input { -webkit-user-select: text; user-select: text; }
 }
 .topbar, .segmented, .btn, .icon-btn, .switch { -webkit-tap-highlight-color: transparent; }
