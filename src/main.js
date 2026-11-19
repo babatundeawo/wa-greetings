@@ -39,7 +39,6 @@ let loadError = null;
 let loaded = false;
 
 const selectedLabels = new Set();
-let labelsOpen = false;
 let searchQuery = '';
 let viewMode = 'pending'; // 'pending' | 'sent' | 'all'
 let visibleCount = DEFAULT_VISIBLE;
@@ -281,42 +280,112 @@ function renderTabs() {
   })));
 }
 
+/**
+ * Group filter. A button opens a picker where groups are tapped on and off as chips. Nothing
+ * behind the picker changes until "Show" is tapped, so the picker never jumps while choosing.
+ * The groups in use appear under the button as chips that can be removed with one tap.
+ */
+function applyLabelFilter(next) {
+  selectedLabels.clear();
+  next.forEach((l) => selectedLabels.add(l));
+  visibleCount = DEFAULT_VISIBLE;
+  renderLabelFilters(); renderTabs(); renderList();
+}
+
 function renderLabelFilters() {
-  const details = h('details', { class: 'dropdown' });
-  details.open = labelsOpen;
-  details.addEventListener('toggle', () => { labelsOpen = details.open; });
+  const count = selectedLabels.size;
+  const opener = h('button', {
+    type: 'button', class: 'picker-btn', 'aria-haspopup': 'dialog', onclick: openGroups,
+  },
+  h('span', { text: 'Filter by group' }),
+  count ? h('span', { class: 'dropdown__count', text: String(count) }) : null,
+  icon('chevron'));
 
-  const summary = h('summary', {},
-    h('span', { text: 'Filter by label' }),
-    selectedLabels.size ? h('span', { class: 'dropdown__count', text: String(selectedLabels.size) }) : null,
-    icon('chevron'));
-  const panel = h('div', { class: 'dropdown__panel' });
+  const active = count
+    ? h('ul', { class: 'chips chips--active', 'aria-label': 'Groups in use' },
+      [...selectedLabels].map((label) => h('li', {},
+        h('button', {
+          type: 'button', class: 'chip chip--remove', 'aria-label': `Remove ${label} filter`,
+          onclick: () => {
+            const next = new Set(selectedLabels);
+            next.delete(label);
+            applyLabelFilter(next);
+          },
+        }, h('span', { text: label }), h('span', { 'aria-hidden': 'true', text: '✕' }))))) 
+    : null;
 
-  if (!labelCounts.length) {
-    panel.append(h('p', { class: 'dropdown__empty', text: 'No labels found in your contacts.' }));
-  }
-  labelCounts.forEach(({ label, count }) => {
-    const input = h('input', { type: 'checkbox' });
-    input.checked = selectedLabels.has(label);
-    input.addEventListener('change', () => {
-      if (input.checked) selectedLabels.add(label); else selectedLabels.delete(label);
-      visibleCount = DEFAULT_VISIBLE;
-      labelsOpen = true;
-      renderLabelFilters(); renderTabs(); renderList();
-    });
-    panel.append(h('label', { class: 'option' }, input, h('span', { text: label }), h('span', { class: 'option__count', text: String(count) })));
+  el.labelFilters.replaceChildren(opener, active);
+}
+
+function openGroups() {
+  const draft = new Set(selectedLabels);
+
+  const dialog = h('dialog', { class: 'dialog dialog--sheet', 'aria-labelledby': 'groupsTitle' });
+  const search = h('input', {
+    class: 'input', type: 'search', placeholder: 'Find a group', autocomplete: 'off',
+    'aria-label': 'Find a group', enterkeyhint: 'search',
   });
-  if (selectedLabels.size) {
-    panel.append(h('button', {
-      type: 'button', class: 'text-btn', text: 'Clear label filters',
-      onclick: () => {
-        selectedLabels.clear(); visibleCount = DEFAULT_VISIBLE; labelsOpen = true;
-        renderLabelFilters(); renderTabs(); renderList();
-      },
-    }));
+  const empty = h('p', { class: 'dropdown__empty', text: 'No group matches that.', hidden: true });
+  const clear = h('button', { type: 'button', class: 'btn btn--ghost', text: 'Clear' });
+  const cancel = h('button', { type: 'button', class: 'btn btn--ghost', text: 'Cancel' });
+  const apply = h('button', { type: 'button', class: 'btn' });
+
+  const items = labelCounts.map(({ label, count }) => {
+    const tag = h('button', {
+      type: 'button', class: 'tag', 'aria-pressed': String(draft.has(label)), 'data-label': label.toLowerCase(),
+    }, h('span', { text: label }), h('span', { class: 'tag__count', text: String(count) }));
+    tag.addEventListener('click', () => {
+      if (draft.has(label)) draft.delete(label); else draft.add(label);
+      tag.setAttribute('aria-pressed', String(draft.has(label)));
+      sync();
+    });
+    return tag;
+  });
+
+  const list = h('div', { class: 'sheet__list', role: 'group', 'aria-label': 'Groups' }, items);
+
+  function sync() {
+    const n = draft.size
+      ? contacts.filter((c) => (c.labels || []).some((l) => draft.has(l))).length
+      : contacts.length;
+    apply.textContent = draft.size ? `Show ${n} contact${n === 1 ? '' : 's'}` : 'Show all contacts';
+    clear.disabled = draft.size === 0;
   }
-  details.append(summary, panel);
-  el.labelFilters.replaceChildren(details);
+
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase();
+    let shown = 0;
+    items.forEach((tag) => {
+      const hide = q !== '' && !tag.dataset.label.includes(q);
+      tag.hidden = hide;
+      if (!hide) shown += 1;
+    });
+    empty.hidden = shown > 0;
+  });
+
+  clear.addEventListener('click', () => {
+    draft.clear();
+    items.forEach((tag) => tag.setAttribute('aria-pressed', 'false'));
+    sync();
+  });
+  cancel.addEventListener('click', () => dialog.close());
+  apply.addEventListener('click', () => { applyLabelFilter(draft); dialog.close(); });
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => dialog.remove());
+
+  dialog.append(h('div', { class: 'dialog__body' },
+    h('h2', { class: 'dialog__title', id: 'groupsTitle', text: 'Choose groups' }),
+    labelCounts.length
+      ? h('p', { class: 'dialog__text', text: 'Tap to pick one or more. The list updates when you tap Show.' })
+      : h('p', { class: 'dropdown__empty', text: 'No groups found in your contacts.' }),
+    labelCounts.length ? search : null,
+    labelCounts.length ? list : null,
+    empty,
+    h('div', { class: 'dialog__actions' }, clear, cancel, apply)));
+
+  document.body.append(dialog);
+  sync();
+  dialog.showModal();
 }
 
 function skeleton() {
@@ -682,6 +751,8 @@ function showSignedOut() {
   contacts = []; sentSet = new Set(); labelCounts = []; loaded = false; loadError = null;
   dirty.clear(); edits.clear(); selectedLabels.clear(); pendingImport = null;
   el.list.replaceChildren();
+  el.labelFilters.replaceChildren();
+  document.querySelectorAll('dialog.dialog--sheet').forEach((d) => d.close());
   el.loginPassword.value = '';
   el.app.hidden = true;
   el.login.hidden = false;
@@ -720,15 +791,8 @@ el.importFile.addEventListener('change', onImportFile);
 el.importConfirm.addEventListener('click', confirmImport);
 el.toTop.addEventListener('click', () => scrollTo({ top: 0, behavior: reducedMotion() ? 'auto' : 'smooth' }));
 
-// Close the label dropdown on outside click or Escape.
-document.addEventListener('click', (e) => {
-  const open = el.labelFilters.querySelector('details[open]');
-  if (open && !open.contains(e.target)) { open.open = false; labelsOpen = false; }
-});
+// Press "/" to jump to search, like most search-first apps.
 document.addEventListener('keydown', (e) => {
-  const open = el.labelFilters.querySelector('details[open]');
-  if (e.key === 'Escape' && open) { open.open = false; labelsOpen = false; open.querySelector('summary').focus(); return; }
-  // Press "/" to jump to search, like most search-first apps.
   const typing = /^(input|textarea|select)$/i.test(document.activeElement && document.activeElement.tagName);
   if (e.key === '/' && !typing && !el.app.hidden && !document.querySelector('dialog[open]')) {
     e.preventDefault();
