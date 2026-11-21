@@ -327,13 +327,16 @@ function openGroups() {
   });
   const empty = h('p', { class: 'dropdown__empty', text: 'No group matches that.', hidden: true });
   const clear = h('button', { type: 'button', class: 'btn btn--ghost', text: 'Clear' });
-  const cancel = h('button', { type: 'button', class: 'btn btn--ghost', text: 'Cancel' });
+  const close = h('button', { type: 'button', class: 'icon-btn sheet__close', 'aria-label': 'Close', text: '✕' });
   const apply = h('button', { type: 'button', class: 'btn' });
 
   const items = labelCounts.map(({ label, count }) => {
     const tag = h('button', {
-      type: 'button', class: 'tag', 'aria-pressed': String(draft.has(label)), 'data-label': label.toLowerCase(),
-    }, h('span', { text: label }), h('span', { class: 'tag__count', text: String(count) }));
+      type: 'button', class: 'group-row', 'aria-pressed': String(draft.has(label)), 'data-label': label.toLowerCase(),
+    },
+    h('span', { class: 'group-row__name', text: label }),
+    h('span', { class: 'group-row__count', text: `${count} contact${count === 1 ? '' : 's'}` }),
+    h('span', { class: 'group-row__check', 'aria-hidden': 'true' }));
     tag.addEventListener('click', () => {
       if (draft.has(label)) draft.delete(label); else draft.add(label);
       tag.setAttribute('aria-pressed', String(draft.has(label)));
@@ -368,20 +371,21 @@ function openGroups() {
     items.forEach((tag) => tag.setAttribute('aria-pressed', 'false'));
     sync();
   });
-  cancel.addEventListener('click', () => dialog.close());
+  close.addEventListener('click', () => dialog.close());
   apply.addEventListener('click', () => { applyLabelFilter(draft); dialog.close(); });
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => dialog.remove());
 
   dialog.append(h('div', { class: 'dialog__body' },
-    h('h2', { class: 'dialog__title', id: 'groupsTitle', text: 'Choose groups' }),
+    h('div', { class: 'sheet__head' },
+      h('h2', { class: 'dialog__title', id: 'groupsTitle', text: 'Choose groups' }), close),
     labelCounts.length
-      ? h('p', { class: 'dialog__text', text: 'Tap to pick one or more. The list updates when you tap Show.' })
+      ? h('p', { class: 'dialog__text', text: 'Tap groups to select them. You can pick more than one.' })
       : h('p', { class: 'dropdown__empty', text: 'No groups found in your contacts.' }),
     labelCounts.length ? search : null,
     labelCounts.length ? list : null,
     empty,
-    h('div', { class: 'dialog__actions' }, clear, cancel, apply)));
+    h('div', { class: 'dialog__actions' }, clear, apply)));
 
   document.body.append(dialog);
   sync();
