@@ -140,6 +140,186 @@
 }
 .to-top:hover { background: var(--surface-2); }
 
+/* ------------------------------------------------------ Group picker */
+/* Opener button in the filter panel */
+.picker-btn {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.25rem;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 650;
+  text-align: left;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.picker-btn > span:first-child { flex: 1; }
+.picker-btn .icon { color: var(--text-muted); rotate: -90deg; }
+.picker-btn:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+.picker-btn:active { transform: scale(0.99); }
+
+/* Groups in use, shown under the opener. One horizontal row on phones, so it never pushes the list down. */
+.chips--active {
+  flex-wrap: nowrap;
+  margin: var(--space-3) 0 0;
+  padding: 0 0 var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.chips--active::-webkit-scrollbar { display: none; }
+.chips--active li { flex: none; }
+@media (min-width: 56rem) { .chips--active { flex-wrap: wrap; overflow: visible; } }
+
+.chip--remove {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  background: var(--primary-tint);
+  color: var(--primary);
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.chip--remove span[aria-hidden] { font-size: 0.8em; opacity: 0.7; }
+.chip--remove:hover { background: color-mix(in srgb, var(--primary) 18%, var(--surface)); }
+.chip--remove:active { transform: scale(0.96); }
+
+/* The picker itself: centred card on larger screens, bottom sheet on phones */
+.dialog--sheet {
+  width: min(32rem, calc(100% - var(--space-5)));
+  overflow: hidden;
+  border-radius: 1.75rem;
+}
+.dialog--sheet .dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: min(86dvh, 44rem);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  overflow: hidden;
+}
+.dialog--sheet .dialog__title { font-size: var(--step-2); }
+.dialog--sheet .dialog__text { font-size: var(--step--1); margin-top: calc(var(--space-2) * -1); }
+
+/* Search with an inline magnifier */
+.dialog--sheet input[type="search"] {
+  min-height: 3.25rem;
+  padding-left: 3rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-2);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%238a8fa8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 1.1rem center;
+  border-color: transparent;
+}
+.dialog--sheet input[type="search"]:focus-visible { background-color: var(--surface); }
+
+/* Group rows: the only region that scrolls, with soft fades at its edges */
+.sheet__list {
+  flex: 1 1 auto;
+  min-height: 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) 2px var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 0.5rem, #000 calc(100% - 1rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 0.5rem, #000 calc(100% - 1rem), transparent 100%);
+}
+.sheet__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.sheet__close { background: var(--surface-2); border-radius: 50%; font-size: 1rem; }
+
+.group-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "name check" "count check";
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: 0.1rem;
+  width: 100%;
+  min-height: 3.75rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.group-row:hover { border-color: var(--line-strong); }
+.group-row:active { transform: scale(0.985); }
+.group-row__name { grid-area: name; font-weight: 650; overflow-wrap: anywhere; line-height: 1.25; }
+.group-row__count { grid-area: count; color: var(--text-muted); font-size: var(--step--1); font-variant-numeric: tabular-nums; }
+.group-row__check {
+  grid-area: check;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  color: transparent;
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), scale var(--dur-fast) var(--ease);
+}
+.group-row__check::before { content: "✓"; }
+.group-row[aria-pressed="true"] { border-color: var(--primary); background: var(--primary-tint); }
+.group-row[aria-pressed="true"] .group-row__name { color: var(--primary); }
+.group-row[aria-pressed="true"] .group-row__check { border-color: var(--primary); background: var(--primary); color: var(--on-primary); scale: 1.08; }
+
+/* Pinned footer */
+.dialog--sheet .dialog__actions {
+  flex: none;
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+.dialog--sheet .dialog__actions .btn { flex: none; }
+.dialog--sheet .dialog__actions .btn:last-child { flex: 1; min-height: 3.25rem; border-radius: var(--radius-pill); }
+.dialog--sheet .dialog__actions .btn--ghost { border-radius: var(--radius-pill); }
+
+/* Phones: slide-up bottom sheet with a grab handle */
+@media (max-width: 40rem) {
+  .dialog.dialog--sheet {
+    width: 100%;
+    max-width: none;
+    margin: auto 0 0;
+    border-width: 1px 0 0;
+    border-radius: 1.75rem 1.75rem 0 0;
+  }
+  .dialog.dialog--sheet[open] { animation: sheet-up 320ms cubic-bezier(0.22, 1, 0.36, 1); }
+  .dialog--sheet .dialog__body {
+    max-height: 88dvh;
+    padding: var(--space-5) max(var(--space-4), env(safe-area-inset-left, 0px)) calc(var(--space-4) + env(safe-area-inset-bottom, 0px))
+      max(var(--space-4), env(safe-area-inset-right, 0px));
+  }
+  .dialog--sheet .dialog__body::before {
+    content: "";
+    align-self: center;
+    width: 2.5rem;
+    height: 0.3rem;
+    margin: calc(var(--space-3) * -1) 0 var(--space-1);
+    border-radius: var(--radius-pill);
+    background: var(--line-strong);
+  }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+
 /* Installed (standalone) polish.
  * Overscroll is set on the root, the element that actually scrolls the page. It must never go
  * on body: with overflow also set on html and body, that combination is what stopped touch
@@ -152,5 +332,5 @@
 .topbar, .segmented, .btn, .icon-btn, .switch { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
-  .sky__body, .install, .to-top { animation: none; }
+  .sky__body, .install, .to-top, .dialog.dialog--sheet[open] { animation: none; }
 }
